@@ -1,0 +1,24 @@
+baseURL = "https://homenas.tail8bf605.ts.net:8443/"
+languageCode = "zh-cn"
+title = "虚构的野心"
+# 开启以下参数增强路径兼容性
+removePathAccents = true
+hasCJKLanguage = true
+
+[menu]
+  [[menu.main]]
+    name = "首页"
+    url = "/"
+    weight = 1
+  [[menu.main]]
+    name = "随笔记录"
+    url = "/posts"
+    weight = 2
+  [[menu.main]]
+    name = "实用工具"
+    url = "/tools"
+    weight = 3
+  [[menu.main]]
+    name = "知识库"
+    url = "/resources"
+    weight = 4
