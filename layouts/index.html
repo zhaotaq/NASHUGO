@@ -1,39 +1,44 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ .Site.Title }}</title>
   <style>
-    :root { --bg: #ffffff; --text: #333; --link: #333; --border: #eee; --tag-bg: #f0f0f0; }
-    .dark-mode { --bg: #121212; --text: #e0e0e0; --link: #82aaff; --border: #333; --tag-bg: #222; }
-    body { background: var(--bg); color: var(--text); max-width: 800px; margin: 40px auto; padding: 0 20px; font-family: sans-serif; line-height: 1.8; transition: 0.3s; }
-    a { color: var(--link); text-decoration: none; border-bottom: 1px solid var(--border); }
-    .nav-btn { position: fixed; top: 20px; right: 20px; cursor: pointer; font-size: 1.5rem; user-select: none; }
+    :root { --bg: #fff; --text: #333; --link: #333; --border: #eee; --nav-link: #666; }
+    .dark-mode { --bg: #121212; --text: #e0e0e0; --link: #82aaff; --border: #333; --nav-link: #aaa; }
+    body { background: var(--bg); color: var(--text); max-width: 800px; margin: 0 auto; padding: 0 20px 40px; font-family: sans-serif; line-height: 1.8; transition: 0.3s; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid var(--border); margin-bottom: 40px; }
+    nav a { margin-right: 20px; color: var(--nav-link); text-decoration: none; font-size: 0.95rem; }
+    nav a:hover { color: var(--text); }
+    .nav-active { color: var(--text); font-weight: bold; }
+    .theme-toggle { cursor: pointer; font-size: 1.2rem; }
+    a { color: var(--link); text-decoration: none; }
     ul { list-style: none; padding: 0; }
     li { margin-bottom: 15px; display: flex; align-items: baseline; }
-    time { color: #999; font-family: monospace; width: 120px; flex-shrink: 0; }
+    time { color: #999; font-family: monospace; width: 110px; flex-shrink: 0; }
   </style>
 </head>
 <body>
-  <div class="nav-btn" onclick="toggleTheme()">🌓</div>
-  <div style="text-align: center; margin-bottom: 50px;">
-    <div style="font-size: 4rem; margin-bottom: 10px;">🌙</div>
+  <header>
+    <nav>
+      <a href="/" class="nav-active">首页</a>
+      <a href="/archive/">归档</a>
+      <a href="/tags/">标签</a>
+      <a href="/about/">关于</a>
+    </nav>
+    <div class="theme-toggle" onclick="toggleTheme()">🌓</div>
+  </header>
+  
+  <div style="text-align: center; margin-bottom: 40px;">
+    <div style="font-size: 3rem; margin-bottom: 10px;">🌙</div>
     <h1>{{ .Site.Title }}</h1>
-    <p style="color: #888;">{{ .Site.Params.description | default "个人数字花园" }}</p>
   </div>
-  <hr style="border:none; border-top: 1px solid var(--border);">
+
   <ul>
     {{ range .Site.RegularPages }}
-    <li>
-        <time>{{ .Date.Format "2006-01-02" }}</time>
-        <a href="{{ .RelPermalink }}">{{ .Title }}</a>
-    </li>
+    <li><time>{{ .Date.Format "2006-01-02" }}</time><a href="{{ .RelPermalink }}">{{ .Title }}</a></li>
     {{ end }}
   </ul>
-  <div style="margin-top: 50px; text-align: center; font-size: 0.9em;">
-    <a href="/tags/" style="border:none;"># 所有标签</a>
-  </div>
 
   <script>
     function toggleTheme() {

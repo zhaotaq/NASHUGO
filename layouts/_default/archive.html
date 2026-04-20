@@ -2,41 +2,41 @@
 <html>
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ .Title }} - {{ .Site.Title }}</title>
+  <title>归档 - {{ .Site.Title }}</title>
   <style>
-    :root { --bg: #fff; --text: #333; --link: #333; --border: #eee; --nav-link: #666; --code-bg: #f6f8fa; }
-    .dark-mode { --bg: #121212; --text: #e0e0e0; --link: #82aaff; --border: #333; --nav-link: #aaa; --code-bg: #1e1e1e; }
+    :root { --bg: #fff; --text: #333; --link: #333; --border: #eee; --nav-link: #666; }
+    .dark-mode { --bg: #121212; --text: #e0e0e0; --link: #82aaff; --border: #333; --nav-link: #aaa; }
     body { background: var(--bg); color: var(--text); max-width: 800px; margin: 0 auto; padding: 0 20px 40px; font-family: sans-serif; line-height: 1.8; transition: 0.3s; }
     header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid var(--border); margin-bottom: 40px; }
     nav a { margin-right: 20px; color: var(--nav-link); text-decoration: none; font-size: 0.95rem; }
-    nav a:hover { color: var(--text); }
     .theme-toggle { cursor: pointer; font-size: 1.2rem; }
     a { color: var(--link); text-decoration: none; }
-    .tag-link { background: var(--border); padding: 2px 6px; border-radius: 3px; font-size: 0.85em; margin-right: 5px; color: var(--nav-link); }
-    pre { background: var(--code-bg); padding: 15px; overflow-x: auto; border-radius: 4px; }
-    hr { border: none; border-top: 1px solid var(--border); margin: 30px 0; }
+    .year-title { font-size: 1.5rem; margin-top: 30px; border-bottom: 2px solid var(--border); display: inline-block; }
+    ul { list-style: none; padding: 0; }
+    li { margin: 10px 0; display: flex; align-items: baseline; }
+    time { color: #999; font-family: monospace; width: 110px; flex-shrink: 0; }
   </style>
 </head>
 <body>
   <header>
     <nav>
       <a href="/">首页</a>
-      <a href="/archive/">归档</a>
+      <a href="/archive/" class="nav-active" style="font-weight:bold; color:var(--text);">归档</a>
       <a href="/tags/">标签</a>
       <a href="/about/">关于</a>
     </nav>
     <div class="theme-toggle" onclick="toggleTheme()">🌓</div>
   </header>
   
-  <h1>{{ .Title }}</h1>
-  <p style="color:#999; font-size: 0.9em;">刊于 {{ .Date.Format "2006-01-02" }}</p>
-  {{ with .Params.tags }}
-    <p style="font-size: 0.9em;">{{ range . }}<a href="/tags/{{ . | urlize }}/" class="tag-link">#{{ . }}</a>{{ end }}</p>
+  <h1>全站归档</h1>
+  {{ range .Site.RegularPages.GroupByDate "2006" }}
+    <div class="year-title">{{ .Key }}</div>
+    <ul>
+      {{ range .Pages }}
+      <li><time>{{ .Date.Format "01-02" }}</time><a href="{{ .RelPermalink }}">{{ .Title }}</a></li>
+      {{ end }}
+    </ul>
   {{ end }}
-  <hr>
-  <div class="content">{{ .Content }}</div>
-  <hr>
-  <div style="text-align: center;"><a href="/">← 返回首页</a></div>
 
   <script>
     function toggleTheme() {
