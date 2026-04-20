@@ -8,8 +8,8 @@
     .dark-mode { --bg: #121212; --text: #dcdde1; --link: #82aaff; --border: #2f3640; --nav-link: #95a5a6; }
     body { background: var(--bg); color: var(--text); max-width: 780px; margin: 0 auto; padding: 0 25px 60px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.8; transition: background-color 0.3s; }
     header { display: flex; justify-content: space-between; align-items: center; padding: 30px 0; border-bottom: 1px solid var(--border); margin-bottom: 40px; height: 32px; }
-    nav a { margin-right: 25px; color: var(--nav-link); text-decoration: none; font-size: 0.95rem; border-bottom: 2px solid transparent; padding-bottom: 4px; }
-    .nav-active { color: var(--text) !important; border-bottom-color: var(--text) !important; }
+    nav a { margin-right: 25px; color: var(--nav-link); text-decoration: none; font-size: 0.95rem; border-bottom: 2px solid transparent; padding-bottom: 4px; transition: 0.2s; }
+    .nav-active { color: var(--text) !important; border-bottom-color: var(--text) !important; font-weight: 500; }
     .theme-toggle { cursor: pointer; font-size: 1.2rem; line-height: 1; }
     h1 { font-size: 2.2rem; margin: 40px 0 20px; text-align: left; font-weight: 700; }
     ul { list-style: none; padding: 0; margin-top: 30px; }
@@ -21,7 +21,12 @@
 </head>
 <body>
   <header>
-    <nav><a href="/" class="nav-active">首页</a><a href="/archive/">归档</a><a href="/tags/">标签</a><a href="/about/">关于</a></nav>
+    <nav>
+      <a href="/" class="nav-active">首页</a>
+      <a href="/archive/">归档</a>
+      <a href="/tags/">标签</a>
+      <a href="/about/">关于</a>
+    </nav>
     <div class="theme-toggle" onclick="toggleTheme()">🌓</div>
   </header>
   <h1>{{ .Site.Title }}</h1>
