@@ -5,22 +5,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>标签: {{ .Title }} - {{ .Site.Title }}</title>
   <style>
-    body { overflow-wrap: break-word; }
-    a { color: #333; text-decoration: none; border-bottom: 1px solid #eee; }
-    a:hover { border-bottom-color: #333; }
+    :root { --bg: #ffffff; --text: #333333; --text-muted: #999999; --link: #333333; --link-hover: #000000; --border: #eeeeee; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #121212; --text: #e0e0e0; --text-muted: #888888; --link: #82aaff; --link-hover: #a6c8ff; --border: #333333; }
+    }
+    body { background-color: var(--bg); color: var(--text); max-width: 800px; margin: 40px auto; padding: 0 20px; font-family: sans-serif; line-height: 1.8; overflow-wrap: break-word; transition: background-color 0.3s; }
+    a { color: var(--link); text-decoration: none; border-bottom: 1px solid var(--border); }
+    a:hover { color: var(--link-hover); border-bottom-color: var(--link-hover); }
+    h1 { color: var(--text-muted); }
+    h1 span { color: var(--text); }
+    hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+    .meta-text { color: var(--text-muted); font-family: monospace; width: 120px; flex-shrink: 0; }
     @media (max-width: 600px) {
         li { flex-direction: column; align-items: flex-start !important; }
-        time { margin-bottom: 5px; }
+        .meta-text { margin-bottom: 5px; }
     }
   </style>
 </head>
-<body style="max-width:800px;margin:40px auto;padding:0 20px;font-family:sans-serif;line-height:1.8;">
-  <h1 style="color: #666;">包含标签 <span style="color: #000;">#{{ .Title }}</span> 的文章</h1>
+<body>
+  <h1>包含标签 <span>#{{ .Title }}</span> 的文章</h1>
   <hr>
   <ul style="list-style: none; padding: 0;">
     {{ range .Pages }}
     <li style="margin-bottom: 20px; display: flex; align-items: baseline;">
-        <time style="color: #999; font-family: monospace; width: 120px; flex-shrink: 0;">{{ .Date.Format "2006-01-02" }}</time>
+        <time class="meta-text">{{ .Date.Format "2006-01-02" }}</time>
         <a href="{{ .RelPermalink }}">{{ .Title }}</a>
     </li>
     {{ end }}
