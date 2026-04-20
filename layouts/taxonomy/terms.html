@@ -1,34 +1,52 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>所有标签 - {{ .Site.Title }}</title>
   <style>
-    :root { --bg: #ffffff; --text: #333333; --text-muted: #999999; --link: #333333; --link-hover: #000000; --border: #333333; }
-    @media (prefers-color-scheme: dark) {
-      :root { --bg: #121212; --text: #e0e0e0; --text-muted: #888888; --link: #82aaff; --link-hover: #a6c8ff; --border: #555555; }
-    }
-    body { background-color: var(--bg); color: var(--text); max-width: 800px; margin: 40px auto; padding: 0 20px; font-family: sans-serif; line-height: 1.8; overflow-wrap: break-word; transition: background-color 0.3s; }
+    :root { --bg: #fff; --text: #333; --link: #333; --border: #eee; --nav-link: #666; }
+    .dark-mode { --bg: #121212; --text: #e0e0e0; --link: #82aaff; --border: #333; --nav-link: #aaa; }
+    body { background: var(--bg); color: var(--text); max-width: 800px; margin: 0 auto; padding: 0 20px 40px; font-family: sans-serif; line-height: 1.8; transition: 0.3s; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid var(--border); margin-bottom: 40px; }
+    nav a { margin-right: 20px; color: var(--nav-link); text-decoration: none; font-size: 0.95rem; }
+    .nav-active { color: var(--text); font-weight: bold; }
+    .theme-toggle { cursor: pointer; font-size: 1.2rem; }
     a { color: var(--link); text-decoration: none; }
-    a:hover { color: var(--link-hover); text-decoration: underline; }
     h1 { border-bottom: 2px solid var(--border); padding-bottom: 10px; }
-    .meta-text { color: var(--text-muted); margin-left: 10px; font-size: 0.9em; }
-    hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+    ul { list-style: none; padding: 0; }
+    li { margin-bottom: 15px; }
+    .count { color: var(--nav-link); margin-left: 10px; font-size: 0.9em; }
   </style>
 </head>
 <body>
+  <header>
+    <nav>
+      <a href="/">首页</a>
+      <a href="/archive/">归档</a>
+      <a href="/tags/" class="nav-active">标签</a>
+      <a href="/about/">关于</a>
+    </nav>
+    <div class="theme-toggle" onclick="toggleTheme()">🌓</div>
+  </header>
+  
   <h1>所有标签</h1>
-  <ul style="list-style: none; padding: 0;">
+  <ul>
     {{ range .Data.Terms.ByCount }}
-    <li style="margin-bottom: 15px;">
-        <a href="{{ .Page.RelPermalink }}" style="font-weight: bold; font-size: 1.1rem;">
-            #{{ .Page.Title }}
-        </a>
-        <span class="meta-text">({{ .Count }} 篇文章)</span>
+    <li>
+        <a href="{{ .Page.RelPermalink }}" style="font-weight: bold; font-size: 1.1rem;">#{{ .Page.Title }}</a>
+        <span class="count">({{ .Count }} 篇文章)</span>
     </li>
     {{ end }}
   </ul>
-  <hr><a href="/">← 返回首页</a>
+  <hr style="border:none; border-top: 1px solid var(--border); margin: 30px 0;">
+  <div style="text-align: center;"><a href="/">← 返回首页</a></div>
+
+  <script>
+    function toggleTheme() {
+      document.body.classList.toggle('dark-mode');
+      localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    }
+    if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
+  </script>
 </body>
 </html>
