@@ -1,11 +1,7 @@
-# 核心隔离：绝对不上传日记和私人配图
-content/posts/
-static/images/
-# 隔离私密 AI 指令
-GEMINI.md
-# 忽略 Hugo 生成的静态网页和缓存
 public/
 resources/
-# 忽略备份与系统垃圾文件
-*.bak
-.DS_Store
+.hugo_build.lock
+# 排除所有实质性文章
+content/posts/
+# 排除所有备份文件夹
+*bak*
