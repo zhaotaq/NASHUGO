@@ -1,57 +1,37 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ .Title }} - {{ .Site.Title }}</title>
   <style>
-    /* 默认白天模式变量 */
-    :root { 
-      --bg: #ffffff; --text: #333333; --text-muted: #999999; 
-      --link: #333333; --link-hover: #000000; 
-      --tag-bg: #f0f0f0; --tag-hover: #e0e0e0; 
-      --border: #eeeeee; --code-bg: #f6f8fa; 
-    }
-    /* 监听系统暗色模式，瞬间覆写变量 */
-    @media (prefers-color-scheme: dark) {
-      :root { 
-        --bg: #121212; --text: #e0e0e0; --text-muted: #888888; 
-        --link: #82aaff; --link-hover: #a6c8ff; 
-        --tag-bg: #222222; --tag-hover: #333333; 
-        --border: #333333; --code-bg: #1e1e1e; 
-      }
-    }
-    /* 全局应用 */
-    body { background-color: var(--bg); color: var(--text); max-width: 800px; margin: 40px auto; padding: 0 20px; font-family: sans-serif; line-height: 1.8; overflow-wrap: break-word; transition: background-color 0.3s, color 0.3s; }
-    img { max-width: 100%; height: auto; display: block; margin: 20px 0; border-radius: 8px; }
-    a { color: var(--link); text-decoration: none; transition: color 0.2s; }
-    a:hover { color: var(--link-hover); text-decoration: underline; }
-    hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
-    
-    /* 文章专属排版 */
-    .meta-text { color: var(--text-muted); font-size: 0.9em; }
-    .tag-link { background: var(--tag-bg); padding: 2px 6px; margin-right: 5px; border-radius: 3px; color: var(--text); text-decoration: none; display: inline-block; }
-    .tag-link:hover { background: var(--tag-hover); text-decoration: none; }
-    blockquote { border-left: 4px solid var(--border); margin: 0 0 20px 0; padding-left: 15px; color: var(--text-muted); }
-    pre, code { background-color: var(--code-bg); border-radius: 4px; font-family: monospace; font-size: 0.9em; }
-    code { padding: 2px 4px; color: #ff7b72; }
-    pre { padding: 15px; overflow-x: auto; }
-    pre code { padding: 0; color: inherit; background-color: transparent; }
+    :root { --bg: #fff; --text: #333; --link: #333; --border: #eee; --tag-bg: #f0f0f0; --code-bg: #f6f8fa; }
+    .dark-mode { --bg: #121212; --text: #e0e0e0; --link: #82aaff; --border: #333; --tag-bg: #222; --code-bg: #1e1e1e; }
+    body { background: var(--bg); color: var(--text); max-width: 800px; margin: 40px auto; padding: 0 20px; font-family: sans-serif; line-height: 1.8; transition: 0.3s; }
+    .nav-btn { position: fixed; top: 20px; right: 20px; cursor: pointer; font-size: 1.5rem; }
+    img { max-width: 100%; border-radius: 8px; }
+    a { color: var(--link); text-decoration: none; }
+    .tag-link { background: var(--tag-bg); padding: 2px 6px; border-radius: 3px; font-size: 0.9em; margin-right: 5px; }
+    pre { background: var(--code-bg); padding: 15px; overflow-x: auto; border-radius: 4px; }
+    hr { border: none; border-top: 1px solid var(--border); margin: 30px 0; }
   </style>
 </head>
 <body>
+  <div class="nav-btn" onclick="toggleTheme()">🌓</div>
   <h1>{{ .Title }}</h1>
-  <p class="meta-text">刊于 {{ .Date.Format "2006-01-02" }}</p>
+  <p style="color:#999;">{{ .Date.Format "2006-01-02" }}</p>
   {{ with .Params.tags }}
-    <p class="meta-text">
-      标签：
-      {{ range . }}
-        <a href="{{ "/tags/" | relLangURL }}{{ . | urlize }}/" class="tag-link">#{{ . }}</a>
-      {{ end }}
-    </p>
+    <p>标签：{{ range . }}<a href="/tags/{{ . | urlize }}/" class="tag-link">#{{ . }}</a>{{ end }}</p>
   {{ end }}
   <hr>
   <div>{{ .Content }}</div>
   <hr><a href="/">← 返回首页</a>
+
+  <script>
+    function toggleTheme() {
+      document.body.classList.toggle('dark-mode');
+      localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    }
+    if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
+  </script>
 </body>
 </html>

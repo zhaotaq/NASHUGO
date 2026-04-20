@@ -4,46 +4,43 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ .Site.Title }}</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌑</text></svg>">
   <style>
-    img { max-width: 100%; height: auto; display: block; margin: 20px 0; border-radius: 8px; }
-    body { overflow-wrap: break-word; }
+    :root { --bg: #ffffff; --text: #333; --link: #333; --border: #eee; --tag-bg: #f0f0f0; }
+    .dark-mode { --bg: #121212; --text: #e0e0e0; --link: #82aaff; --border: #333; --tag-bg: #222; }
+    body { background: var(--bg); color: var(--text); max-width: 800px; margin: 40px auto; padding: 0 20px; font-family: sans-serif; line-height: 1.8; transition: 0.3s; }
+    a { color: var(--link); text-decoration: none; border-bottom: 1px solid var(--border); }
+    .nav-btn { position: fixed; top: 20px; right: 20px; cursor: pointer; font-size: 1.5rem; user-select: none; }
+    ul { list-style: none; padding: 0; }
+    li { margin-bottom: 15px; display: flex; align-items: baseline; }
+    time { color: #999; font-family: monospace; width: 120px; flex-shrink: 0; }
   </style>
 </head>
-<body style="max-width: 800px; margin: 40px auto; padding: 0 20px; font-family: 'PingFang SC', 'Microsoft YaHei', serif; line-height: 1.8; color: #222; background: #fff;">
-  <header style="margin-bottom: 30px;">
-    <h1 style="font-size: 2.5em; margin-bottom: 10px;">🌑 {{ .Site.Title }}</h1>
-    <p style="color: #666; font-size: 0.95em; margin-bottom: 20px;">记录生活里的碎碎念，分享有趣的技术与游戏工具。</p>
-    <nav style="margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px;">
-      {{ range .Site.Menus.main }}
-        <a href="{{ .URL }}" style="margin-right: 20px; text-decoration: none; color: #000; font-weight: bold;">{{ .Name }}</a>
-      {{ end }}
-    </nav>
-  </header>
-
-  {{ $sections := slice "posts" "tools" "resources" }}
-  {{ $sectionNames := dict "posts" "💭 随笔记录" "tools" "🛠️ 实用工具" "resources" "📚 知识库" }}
-
-  {{ range $sections }}
-    {{ $pages := where $.Site.RegularPages "Section" . }}
-    {{ if $pages }}
-      <section style="margin-bottom: 40px;">
-        <h3 style="background: #f4f4f4; padding: 5px 15px; border-left: 5px solid #333;">{{ index $sectionNames . }}</h3>
-        <ul style="list-style: none; padding: 0;">
-          {{ range $pages }}
-            <li style="margin-bottom: 20px;">
-              <div style="display: flex; align-items: baseline; flex-wrap: wrap;">
-                <small style="color: #999; font-family: monospace; min-width: 100px;">{{ .Date.Format "2006-01-02" }}</small>
-                <a href="{{ .RelPermalink }}" style="text-decoration: none; color: #000; font-weight: bold; font-size: 1.1em; border-bottom: 1px solid #eee;">{{ .Title }}</a>
-              </div>
-              <div style="font-size: 0.9em; color: #666; margin-top: 5px; margin-left: 0; line-height: 1.6;">
-                {{ .Summary | plainify | truncate 100 }}
-              </div>
-            </li>
-          {{ end }}
-        </ul>
-      </section>
+<body>
+  <div class="nav-btn" onclick="toggleTheme()">🌓</div>
+  <div style="text-align: center; margin-bottom: 50px;">
+    <div style="font-size: 4rem; margin-bottom: 10px;">🌙</div>
+    <h1>{{ .Site.Title }}</h1>
+    <p style="color: #888;">{{ .Site.Params.description | default "个人数字花园" }}</p>
+  </div>
+  <hr style="border:none; border-top: 1px solid var(--border);">
+  <ul>
+    {{ range .Site.RegularPages }}
+    <li>
+        <time>{{ .Date.Format "2006-01-02" }}</time>
+        <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+    </li>
     {{ end }}
-  {{ end }}
+  </ul>
+  <div style="margin-top: 50px; text-align: center; font-size: 0.9em;">
+    <a href="/tags/" style="border:none;"># 所有标签</a>
+  </div>
+
+  <script>
+    function toggleTheme() {
+      document.body.classList.toggle('dark-mode');
+      localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    }
+    if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
+  </script>
 </body>
 </html>
