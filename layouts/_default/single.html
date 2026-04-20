@@ -24,7 +24,7 @@
       <a href="/" {{ if .IsHome }}class="nav-active"{{ end }}>首页</a>
       <a href="/archive/" {{ if eq .RelPermalink "/archive/" }}class="nav-active"{{ end }}>归档</a>
       <a href="/tags/" {{ if eq .Type "tags" }}class="nav-active"{{ end }}>标签</a>
-      <a href="/about/" {{ if eq .RelPermalink "/about/" }}class="nav-active"{{ end }}>关于</a>
+      <a href="/tools/">工具</a><a href="/about/" {{ if eq .RelPermalink "/about/" }}class="nav-active"{{ end }}>关于</a>
     </nav>
     <div class="theme-toggle" onclick="toggleTheme()">🌓</div>
   </header>
