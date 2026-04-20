@@ -1,7 +1,8 @@
 public/
 resources/
 .hugo_build.lock
-# 排除所有实质性文章
+# 排除所有文章和图片素材（保护隐私）
 content/posts/
+static/images/
 # 排除所有备份文件夹
 *bak*
