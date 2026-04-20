@@ -21,7 +21,7 @@
     {{ range .Pages }}
     <li style="margin-bottom: 20px; display: flex; align-items: baseline;">
         <time style="color: #999; font-family: monospace; width: 120px; flex-shrink: 0;">{{ .Date.Format "2006-01-02" }}</time>
-        <a href="{{ .Permalink }}">{{ .Title }}</a>
+        <a href="{{ .RelPermalink }}">{{ .Title }}</a>
     </li>
     {{ end }}
   </ul>

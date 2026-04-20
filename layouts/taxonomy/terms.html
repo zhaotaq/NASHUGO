@@ -15,7 +15,7 @@
   <ul style="list-style: none; padding: 0;">
     {{ range .Data.Terms.ByCount }}
     <li style="margin-bottom: 15px;">
-        <a href="{{ .Page.Permalink }}" style="font-weight: bold; font-size: 1.1rem;">
+        <a href="{{ .Page.RelPermalink }}" style="font-weight: bold; font-size: 1.1rem;">
             #{{ .Page.Title }}
         </a>
         <span style="color: #999; margin-left: 10px;">({{ .Count }} 篇文章)</span>
