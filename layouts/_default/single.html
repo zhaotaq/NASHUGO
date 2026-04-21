@@ -34,9 +34,7 @@
     #toc > ul { padding-left: 0; }
     #toc > ul { padding-left: 0; margin: 0; }
     #toc li { margin: 5px 0; }
-    #toc a { color: var(--nav-link); text-decoration: none; transition: color 0.2s, border-left 0.2s; display: block; padding-left: 0; border-left: 2px solid transparent; }
-    #toc a:hover { color: var(--text); }
-    #toc a.toc-active { color: var(--text); border-left: 2px solid var(--text); padding-left: 6px; }
+    #toc a { color: var(--nav-link); text-decoration: none; }
     @media (min-width: 1250px) { #toc ul, #toc ol { list-style: none; padding-left: 12px; margin: 4px 0; }
     #toc > ul { padding-left: 0; }
     #toc { position: fixed; left: calc(50% + 420px); top: 100px; width: 240px; border: none; background: transparent; } }
@@ -103,27 +101,6 @@
       a.setAttribute('rel', 'noopener noreferrer');
     });
 
-    // TOC 滚动高亮
-    const tocLinks = document.querySelectorAll('#toc a');
-    if (tocLinks.length > 0) {
-      const headings = Array.from(tocLinks).map(a => {
-        const id = decodeURIComponent(a.getAttribute('href').replace('#',''));
-        return document.getElementById(id);
-      }).filter(Boolean);
-
-      function updateToc() {
-        let active = headings[0];
-        headings.forEach(h => {
-          if (h.getBoundingClientRect().top <= 100) active = h;
-        });
-        tocLinks.forEach(a => {
-          const id = decodeURIComponent(a.getAttribute('href').replace('#',''));
-          a.classList.toggle('toc-active', active && id === active.id);
-        });
-      }
-      window.addEventListener('scroll', updateToc, { passive: true });
-      updateToc();
-    }
   </script>
 </body>
 </html>
