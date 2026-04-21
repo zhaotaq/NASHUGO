@@ -12,25 +12,33 @@
     .nav-active { color: var(--text) !important; border-bottom-color: var(--text) !important; font-weight: 500; }
     .theme-toggle { cursor: pointer; font-size: 1.2rem; }
     h1 { font-size: 2.2rem; margin: 40px 0 20px; font-weight: 700; }
-    /* 代码块 - 修复原来 --code-bg 定义了却没用的问题 */
+    /* 代码块 */
     pre { background: var(--code-bg); padding: 16px 20px; border-radius: 6px; overflow-x: auto; font-size: 0.875rem; line-height: 1.65; margin: 24px 0; }
     code { background: var(--code-bg); padding: 2px 5px; border-radius: 3px; font-size: 0.875em; }
     pre code { background: none; padding: 0; font-size: inherit; }
-    /* 代码块复制按钮 */
+    /* 代码复制按钮 */
     .code-wrapper { position: relative; }
     .copy-btn { position: absolute; top: 8px; right: 8px; padding: 2px 8px; font-size: 11px; cursor: pointer; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 3px; opacity: 0.45; transition: opacity 0.2s; }
     .copy-btn:hover, .copy-btn.copied { opacity: 1; }
-    /* 阅读进度条 */
+    /* 进度条 */
     #reading-progress { position: fixed; top: 0; left: 0; height: 2px; width: 0%; background: var(--text); z-index: 9999; transition: width 0.12s linear; }
     /* 回到顶部 */
-    #back-to-top { position: fixed; bottom: 32px; right: 28px; width: 36px; height: 36px; border-radius: 50%; background: var(--text); color: var(--bg); border: none; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; z-index: 999; line-height: 1; }
+    #back-to-top { position: fixed; bottom: 32px; right: 28px; width: 36px; height: 36px; border-radius: 50%; background: var(--text); color: var(--bg); border: none; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; z-index: 999; }
     #back-to-top.visible { opacity: 0.6; }
     #back-to-top:hover { opacity: 1; }
-    /* TOC */
-    #toc { background: var(--toc-bg); padding: 15px; border-radius: 8px; margin-bottom: 30px; font-size: 0.9rem; border: 1px solid var(--border); }
+    /* TOC - 去黑点，加高亮 */
+    #toc { background: var(--toc-bg); padding: 15px 15px 15px 18px; border-radius: 8px; margin-bottom: 30px; font-size: 0.9rem; border: 1px solid var(--border); }
+    #toc ul { list-style: none; padding-left: 10px; margin: 4px 0; }
+    #toc > ul { padding-left: 0; margin: 0; }
+    #toc li { margin: 5px 0; }
+    #toc a { color: var(--nav-link); text-decoration: none; transition: color 0.2s, border-left 0.2s; display: block; padding-left: 0; border-left: 2px solid transparent; }
+    #toc a:hover { color: var(--text); }
+    #toc a.toc-active { color: var(--text); border-left: 2px solid var(--text); padding-left: 6px; }
     @media (min-width: 1250px) { #toc { position: fixed; left: calc(50% + 420px); top: 100px; width: 240px; border: none; background: transparent; } }
+    /* 标签 */
     .tag-link { background: var(--border); padding: 2px 8px; border-radius: 4px; font-size: 0.85em; margin-right: 8px; color: var(--nav-link); text-decoration: none; }
     footer { margin-top: 80px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center; color: var(--nav-link); font-size: 0.8rem; }
+    @media (max-width: 600px) { nav a { margin-right: 14px; font-size: 0.82rem; } }
   </style>
 </head>
 <body>
@@ -63,7 +71,7 @@
     function toggleTheme() { document.body.classList.toggle('dark-mode'); localStorage.setItem('theme', document.body.classList.contains('dark-mode')?'dark':'light'); }
     if (localStorage.getItem('theme')==='dark') document.body.classList.add('dark-mode');
 
-    // 阅读进度条 + 回顶按钮
+    // 进度条 + 回顶
     const bar = document.getElementById('reading-progress');
     const btn = document.getElementById('back-to-top');
     window.addEventListener('scroll', () => {
@@ -73,7 +81,7 @@
     });
     btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 
-    // 代码块复制按钮
+    // 代码块复制
     document.querySelectorAll('pre').forEach(pre => {
       const w = document.createElement('div'); w.className = 'code-wrapper';
       pre.parentNode.insertBefore(w, pre); w.appendChild(pre);
@@ -84,11 +92,33 @@
       }));
     });
 
-    // 外链自动新窗口
+    // 外链新窗口
     document.querySelectorAll('.content a[href^="http"]').forEach(a => {
       a.setAttribute('target', '_blank');
       a.setAttribute('rel', 'noopener noreferrer');
     });
+
+    // TOC 滚动高亮
+    const tocLinks = document.querySelectorAll('#toc a');
+    if (tocLinks.length > 0) {
+      const headings = Array.from(tocLinks).map(a => {
+        const id = decodeURIComponent(a.getAttribute('href').replace('#',''));
+        return document.getElementById(id);
+      }).filter(Boolean);
+
+      function updateToc() {
+        let active = headings[0];
+        headings.forEach(h => {
+          if (h.getBoundingClientRect().top <= 100) active = h;
+        });
+        tocLinks.forEach(a => {
+          const id = decodeURIComponent(a.getAttribute('href').replace('#',''));
+          a.classList.toggle('toc-active', active && id === active.id);
+        });
+      }
+      window.addEventListener('scroll', updateToc, { passive: true });
+      updateToc();
+    }
   </script>
 </body>
 </html>
