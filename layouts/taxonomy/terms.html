@@ -61,11 +61,12 @@
 
     {{ range .Data.Terms.ByCount }}
       (function() {
-        const id = {{ .Page.Title | urlize | jsonify }};
-        const name = {{ .Page.Title | jsonify }};
+        // 【核心修复】：去掉 jsonify，直接使用纯净的字符串变量传递
+        const id = "{{ .Page.Title | urlize }}";
+        const name = "{{ .Page.Title }}";
         const val = {{ .Count }};
         if (val > maxVal) maxVal = val;
-        const node = { id, name, val, isConnected: false, url: {{ .Page.RelPermalink | jsonify }} };
+        const node = { id: id, name: name, val: val, isConnected: false, url: "{{ .Page.RelPermalink }}" };
         graphData.nodes.push(node);
         nodesMap[id] = node;
       })();
@@ -75,7 +76,7 @@
       {{ with .Params.tags }}
         {{ if gt (len .) 1 }}
           (function() {
-            const tags = [{{ range . }}{{ . | urlize | jsonify }},{{ end }}];
+            const tags = [{{ range . }}"{{ . | urlize }}",{{ end }}];
             for (let i = 0; i < tags.length; i++) {
               for (let j = i + 1; j < tags.length; j++) {
                 const s = tags[i], t = tags[j];
