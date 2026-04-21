@@ -1,4 +1,4 @@
-baseURL = "https://homenas.tail8bf605.ts.net:8443/"
+baseURL = "/"
 languageCode = "zh-cn"
 title = "虚构的野心"
 # 开启以下参数增强路径兼容性
