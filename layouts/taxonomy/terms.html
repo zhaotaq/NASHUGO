@@ -2,8 +2,8 @@
 <html lang="zh" style="scrollbar-gutter: stable;">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>标签与图谱 - {{ .Site.Title }}</title>
-  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+  <title>知识大脑 - {{ .Site.Title }}</title>
+  <script src="https://unpkg.com/force-graph"></script>
   <style>
     :root { --bg: #fff; --text: #2c3e50; --link: #34495e; --border: #eee; --nav-link: #7f8c8d; }
     .dark-mode { --bg: #121212; --text: #dcdde1; --link: #82aaff; --border: #2f3640; --nav-link: #95a5a6; }
@@ -14,7 +14,8 @@
     .theme-toggle { cursor: pointer; font-size: 1.2rem; line-height: 1; }
     h1 { font-size: 2.2rem; margin: 40px 0 10px; font-weight: 700; }
     
-    #graph-container { width: 100%; height: 450px; margin-top: 30px; border-radius: 8px; border: 1px solid var(--border); background: transparent; }
+    /* 图谱容器：去掉边框，让它像 Obsidian 一样融入背景 */
+    #graph-container { width: 100%; height: 550px; margin-top: 30px; border-radius: 12px; background: var(--bg); border: 1px solid var(--border); box-shadow: inset 0 0 20px rgba(0,0,0,0.02); overflow: hidden; }
     
     .tag-cloud { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 40px; list-style: none; padding: 0; }
     .tag-cloud a { color: var(--text); text-decoration: none; background: var(--border); padding: 6px 14px; border-radius: 20px; font-size: 0.9rem; transition: 0.2s; }
@@ -29,15 +30,15 @@
     <nav>
       <a href="/">首页</a>
       <a href="/archive/">归档</a>
-      <a href="/tags/" class="nav-active">标签</a>
+      <a href="/tags/" class="nav-active">大脑图谱</a>
       <a href="/tools/">工具</a>
       <a href="/about/">关于</a>
     </nav>
     <div class="theme-toggle" onclick="toggleTheme()">🌓</div>
   </header>
 
-  <h1>标签与图谱</h1>
-  <p style="color: var(--nav-link); font-size: 0.9em;">知识的漫游轨迹。节点越大，代表相关文章越多；连线代表它们曾被同时提及。</p>
+  <h1>大脑图谱 (Graph View)</h1>
+  <p style="color: var(--nav-link); font-size: 0.9em;">完全由物理引擎驱动的数字大脑。滚轮缩放，拖拽漫游，点击节点查看档案。</p>
   
   <div id="graph-container"></div>
 
@@ -52,36 +53,35 @@
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
     
+    let myGraph = null;
+    
     function toggleTheme() { 
       document.body.classList.toggle('dark-mode'); 
       localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light'); 
-      initGraph(); 
+      if (myGraph) updateGraphTheme();
     }
     if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
 
+    // --- 数据提取 ---
     let graphNodes = [];
     let graphLinks = [];
 
-    // 1. 确保节点的 ID 强制使用 Hugo 的 urlize 标准化编码
     {{ range $name, $taxonomy := .Site.Taxonomies.tags }}
       graphNodes.push({
         id: "{{ $name | urlize }}",
         name: "{{ $name }}",
-        symbolSize: {{ add 15 (mul $taxonomy.Count 3) }},
+        val: {{ .Count }}, // 文章数量决定大小
         url: "/tags/{{ $name | urlize }}/"
       });
     {{ end }}
 
-    // 2. 确保连线的两端也强制使用 urlize，实现 100% 精准咬合
     {{ range .Site.RegularPages }}
       {{ with .Params.tags }}
         {{ if gt (len .) 1 }}
           (function() {
-            let pageTags = [
-              {{ range . }}"{{ . | urlize }}",{{ end }}
-            ];
-            for(let i = 0; i < pageTags.length; i++) {
-              for(let j = i + 1; j < pageTags.length; j++) {
+            let pageTags = [{{ range . }}"{{ . | urlize }}",{{ end }}];
+            for(let i=0; i<pageTags.length; i++) {
+              for(let j=i+1; j<pageTags.length; j++) {
                 graphLinks.push({ source: pageTags[i], target: pageTags[j] });
               }
             }
@@ -90,45 +90,66 @@
       {{ end }}
     {{ end }}
 
-    let myChart = null;
-    function initGraph() {
-      if (myChart != null) myChart.dispose();
-      let dom = document.getElementById('graph-container');
-      if (!dom || graphNodes.length === 0) {
-          if(dom) dom.style.display = 'none';
-          return;
-      }
-      myChart = echarts.init(dom);
-      
+    // --- Obsidian 同款渲染引擎 ---
+    function updateGraphTheme() {
       let isDark = document.body.classList.contains('dark-mode');
-      let textColor = isDark ? '#dcdde1' : '#2c3e50';
-      // 稍微加深了连线的透明度，让线更清晰
-      let lineColor = isDark ? 'rgba(130, 170, 255, 0.4)' : 'rgba(52, 73, 94, 0.3)';
-      let nodeColor = isDark ? '#82aaff' : '#3498db';
-
-      let option = {
-        tooltip: { formatter: '{b}' },
-        series: [{
-          type: 'graph',
-          layout: 'force',
-          data: graphNodes,
-          links: graphLinks,
-          roam: true,
-          label: { show: true, position: 'right', color: textColor, fontSize: 12 },
-          force: { repulsion: 250, edgeLength: 100 },
-          itemStyle: { color: nodeColor, borderColor: isDark ? '#121212' : '#fff', borderWidth: 2 },
-          lineStyle: { color: lineColor, curveness: 0.1, width: 2 }
-        }]
-      };
-      myChart.setOption(option);
       
-      myChart.on('click', function (params) {
-        if (params.dataType === 'node' && params.data.url) window.location.href = params.data.url;
+      // 更新连线颜色
+      myGraph.linkColor(() => isDark ? 'rgba(150, 150, 150, 0.2)' : 'rgba(100, 100, 100, 0.2)');
+      
+      // Obsidian 同款 Canvas 自定义渲染（画小圆点 + 标签悬浮字）
+      myGraph.nodeCanvasObject((node, ctx, globalScale) => {
+        // 1. 画圈 (经典 Obsidian 紫色高亮)
+        const radius = Math.sqrt(Math.max(0, node.val || 1)) * 3;
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI, false);
+        ctx.fillStyle = isDark ? '#9a73ff' : '#6b3fa0'; // 迷幻紫
+        ctx.fill();
+
+        // 2. 画字 (放大时才显示清晰字体，缩小变淡，模拟真实呼吸感)
+        const label = node.name;
+        const fontSize = 12 / globalScale;
+        ctx.font = `${fontSize}px Sans-Serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = isDark ? 'rgba(220, 221, 225, 0.8)' : 'rgba(44, 62, 80, 0.8)';
+        ctx.fillText(label, node.x, node.y + radius + (3 / globalScale));
       });
     }
 
-    setTimeout(initGraph, 100);
-    window.addEventListener('resize', function() { if(myChart) myChart.resize(); });
+    function initGraph() {
+      const elem = document.getElementById('graph-container');
+      if (!elem || graphNodes.length === 0) {
+          if(elem) elem.style.display = 'none';
+          return;
+      }
+      
+      // 实例化 ForceGraph
+      myGraph = ForceGraph()(elem)
+        .graphData({ nodes: graphNodes, links: graphLinks })
+        .nodeId('id')
+        .nodeVal('val')
+        .onNodeClick(node => window.location.href = node.url)
+        .onNodeHover(node => {
+          // 悬浮时鼠标变小手
+          elem.style.cursor = node ? 'pointer' : null;
+        })
+        // 调整物理引擎参数：线段距离和排斥力
+        .d3Force('link', d3.forceLink().distance(60))
+        .d3Force('charge', d3.forceManyBody().strength(-200));
+
+      updateGraphTheme();
+
+      // 自适应窗口大小
+      let resizeObserver = new ResizeObserver(() => {
+        myGraph.width(elem.clientWidth);
+        myGraph.height(elem.clientHeight);
+      });
+      resizeObserver.observe(elem);
+    }
+
+    // 初始化引擎
+    setTimeout(initGraph, 50);
   </script>
 </body>
 </html>
