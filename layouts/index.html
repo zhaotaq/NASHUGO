@@ -4,39 +4,18 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ .Site.Title }}</title>
   <style>
-    :root { --bg: #fff; --text: #2c3e50; --link: #34495e; --border: #eee; --nav-link: #7f8c8d; --heat-0: #ebedf0; --heat-1: #c6e48b; --heat-2: #40c463; --heat-3: #216e39; }
-    .dark-mode { --bg: #121212; --text: #dcdde1; --link: #82aaff; --border: #2f3640; --nav-link: #95a5a6; --heat-0: #2d333b; --heat-1: #0e4429; --heat-2: #006d32; --heat-3: #26a641; }
+    :root { --bg: #fff; --text: #2c3e50; --link: #34495e; --border: #eee; --nav-link: #7f8c8d; }
+    .dark-mode { --bg: #121212; --text: #dcdde1; --link: #82aaff; --border: #2f3640; --nav-link: #95a5a6; }
     body { background: var(--bg); color: var(--text); max-width: 780px; margin: 0 auto; padding: 0 25px 60px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.8; transition: background-color 0.3s; }
     header { display: flex; justify-content: space-between; align-items: center; padding: 30px 0; border-bottom: 1px solid var(--border); margin-bottom: 40px; height: 32px; }
-    nav a { margin-right: 25px; color: var(--nav-link); text-decoration: none; font-size: 0.95rem; border-bottom: 2px solid transparent; padding-bottom: 4px; }
-    .nav-active { color: var(--text) !important; border-bottom-color: var(--text) !important; }
-    .theme-toggle { cursor: pointer; font-size: 1.2rem; }
-    h1 { font-size: 2.2rem; margin: 40px 0 20px; font-weight: 700; }
+    nav a { margin-right: 25px; color: var(--nav-link); text-decoration: none; font-size: 0.95rem; border-bottom: 2px solid transparent; padding-bottom: 4px; transition: 0.2s; }
+    .nav-active { color: var(--text) !important; border-bottom-color: var(--text) !important; font-weight: 500; }
+    .theme-toggle { cursor: pointer; font-size: 1.2rem; line-height: 1; }
+    h1 { font-size: 2.2rem; margin: 40px 0 20px; text-align: left; font-weight: 700; }
     ul { list-style: none; padding: 0; margin-top: 30px; }
     li { margin-bottom: 18px; display: flex; align-items: baseline; }
     time { color: var(--nav-link); font-family: monospace; width: 110px; flex-shrink: 0; }
     a { color: var(--link); text-decoration: none; }
-
-    /* 热力图 */
-    .heatmap-wrap { margin: 48px 0 8px; }
-    .heatmap-label { font-size: 0.8rem; color: var(--nav-link); margin-bottom: 8px; }
-    .heatmap-grid { display: flex; gap: 3px; }
-    .heatmap-col { display: flex; flex-direction: column; gap: 3px; }
-    .heatmap-cell { width: 11px; height: 11px; border-radius: 2px; background: var(--heat-0); cursor: default; transition: opacity 0.15s; }
-    .heatmap-cell:hover { opacity: 0.75; }
-    .heatmap-cell.l1 { background: var(--heat-1); }
-    .heatmap-cell.l2 { background: var(--heat-2); }
-    .heatmap-cell.l3 { background: var(--heat-3); }
-    .heatmap-cell[data-tip]:hover::after { content: attr(data-tip); position: fixed; background: var(--text); color: var(--bg); font-size: 11px; padding: 3px 7px; border-radius: 4px; white-space: nowrap; pointer-events: none; transform: translate(8px, -100%); z-index: 99; }
-    @media (max-width: 600px) { .heatmap-cell { width: 9px; height: 9px; } }
-
-    /* 标签统计 */
-    .tag-stats { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px 16px; }
-    .tag-stats a { color: var(--nav-link); font-size: 0.85rem; text-decoration: none; }
-    .tag-stats a:hover { color: var(--text); }
-
-    .archive-link { margin-top: 32px; }
-    .archive-link a { color: var(--nav-link); font-size: 0.9rem; }
     footer { margin-top: 80px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center; color: var(--nav-link); font-size: 0.8rem; }
   </style>
 </head>
@@ -45,80 +24,28 @@
     <nav>
       <a href="/" class="nav-active">首页</a>
       <a href="/archive/">归档</a>
-      <a href="/tags/">标签</a>
+      <a href="/tags/">技能面板</a>
       <a href="/tools/">工具</a>
       <a href="/about/">关于</a>
     </nav>
     <div class="theme-toggle" onclick="toggleTheme()">🌓</div>
   </header>
-
   <h1>{{ .Site.Title }}</h1>
-
-  <!-- 热力图 -->
-  <div class="heatmap-wrap">
-    <div class="heatmap-label">过去一年的写作记录</div>
-    <div class="heatmap-grid" id="heatmap"></div>
-  </div>
-
-  <!-- 标签统计 -->
-  <div class="tag-stats">
-    {{ range .Site.Taxonomies.tags.ByCount }}
-    <a href="{{ .Page.RelPermalink }}">#{{ .Page.Title }} · {{ .Count }}篇</a>
-    {{ end }}
-  </div>
-
-  <!-- 文章列表 -->
+  
   <ul>
-    {{ range first 10 (where .Site.RegularPages "Section" "posts").ByDate.Reverse }}
+    {{ range (where .Site.RegularPages "Section" "posts") }}
     <li><time>{{ .Date.Format "2006-01-02" }}</time><a href="{{ .RelPermalink }}">{{ .Title }}</a></li>
     {{ end }}
   </ul>
 
-  <div class="archive-link"><a href="/archive/">→ 查看全部归档</a></div>
-
   <footer><p>© <span id="year"></span> {{ .Site.Title }}</p></footer>
-
-  <!-- 把Hugo的文章日期注入JS -->
-  <script>
-    const postDates = [{{ range (where .Site.RegularPages "Section" "posts") }}"{{ .Date.Format "2006-01-02" }}",{{ end }}];
-  </script>
-
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
-    function toggleTheme() { document.body.classList.toggle('dark-mode'); localStorage.setItem('theme', document.body.classList.contains('dark-mode')?'dark':'light'); }
+    function toggleTheme() { 
+      document.body.classList.toggle('dark-mode'); 
+      localStorage.setItem('theme', document.body.classList.contains('dark-mode')?'dark':'light'); 
+    }
     if (localStorage.getItem('theme')==='dark') document.body.classList.add('dark-mode');
-
-    // 热力图
-    (function() {
-      const counts = {};
-      postDates.forEach(d => { counts[d] = (counts[d] || 0) + 1; });
-
-      const today = new Date();
-      today.setHours(0,0,0,0);
-      // 从今天往前推364天，从那周的周日开始
-      const start = new Date(today);
-      start.setDate(start.getDate() - 363);
-      start.setDate(start.getDate() - start.getDay()); // 对齐到周日
-
-      const grid = document.getElementById('heatmap');
-      let col = null;
-      const cur = new Date(start);
-
-      while (cur <= today) {
-        if (cur.getDay() === 0) {
-          col = document.createElement('div');
-          col.className = 'heatmap-col';
-          grid.appendChild(col);
-        }
-        const dateStr = cur.toISOString().slice(0,10);
-        const cnt = counts[dateStr] || 0;
-        const cell = document.createElement('div');
-        cell.className = 'heatmap-cell' + (cnt===0?'': cnt===1?' l1': cnt===2?' l2':' l3');
-        if (cnt > 0) cell.setAttribute('data-tip', dateStr + ' · ' + cnt + '篇');
-        col.appendChild(cell);
-        cur.setDate(cur.getDate() + 1);
-      }
-    })();
   </script>
 </body>
 </html>
