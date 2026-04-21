@@ -2,30 +2,24 @@
 <html lang="zh" style="scrollbar-gutter: stable;">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>生存技能树 - {{ .Site.Title }}</title>
+  <title>标签与图谱 - {{ .Site.Title }}</title>
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
   <style>
-    /* 引入废土/僵尸毁灭工程风格 */
-    :root { 
-      --bg: #141514; /* PZ 面板的深色背景 */
-      --text: #a8b5a1; /* PZ 的脏绿色文字 */
-      --link: #748b67; 
-      --border: #2c3625; /* 墨绿色边框 */
-      --nav-link: #5c6e51; 
-      --panel-bg: rgba(20, 25, 20, 0.85);
-    }
-    body { background: var(--bg); color: var(--text); max-width: 850px; margin: 0 auto; padding: 0 25px 60px; font-family: 'Courier New', Courier, monospace, sans-serif; line-height: 1.8; }
+    :root { --bg: #fff; --text: #2c3e50; --link: #34495e; --border: #eee; --nav-link: #7f8c8d; }
+    .dark-mode { --bg: #121212; --text: #dcdde1; --link: #82aaff; --border: #2f3640; --nav-link: #95a5a6; }
+    body { background: var(--bg); color: var(--text); max-width: 780px; margin: 0 auto; padding: 0 25px 60px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.8; transition: background-color 0.3s; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 30px 0; border-bottom: 1px solid var(--border); margin-bottom: 40px; height: 32px; }
+    nav a { margin-right: 25px; color: var(--nav-link); text-decoration: none; font-size: 0.95rem; border-bottom: 2px solid transparent; padding-bottom: 4px; transition: 0.2s; }
+    .nav-active { color: var(--text) !important; border-bottom-color: var(--text) !important; font-weight: 500; }
+    .theme-toggle { cursor: pointer; font-size: 1.2rem; line-height: 1; }
+    h1 { font-size: 2.2rem; margin: 40px 0 10px; font-weight: 700; }
     
-    /* 顶部导航栏废土化 */
-    header { display: flex; justify-content: space-between; align-items: center; padding: 30px 0; border-bottom: 2px solid var(--border); margin-bottom: 40px; height: 32px; text-transform: uppercase; letter-spacing: 1px; }
-    nav a { margin-right: 25px; color: var(--nav-link); text-decoration: none; font-size: 0.95rem; border-bottom: 2px solid transparent; padding-bottom: 4px; transition: 0.2s; font-weight: bold; }
-    .nav-active { color: #d0dcd0 !important; border-bottom-color: #748b67 !important; text-shadow: 0 0 5px rgba(116, 139, 103, 0.5); }
+    #graph-container { width: 100%; height: 450px; margin-top: 30px; border-radius: 8px; border: 1px solid var(--border); background: transparent; }
     
-    h1 { font-size: 2rem; margin: 20px 0 10px; color: #d0dcd0; text-shadow: 2px 2px 0px #000; border-left: 5px solid #6b1414; padding-left: 15px; }
-    .subtitle { color: #888; font-size: 0.85em; margin-bottom: 30px; border: 1px dashed var(--border); padding: 10px; background: #0a0a0a; }
-
-    /* 技能树容器 */
-    #graph-container { width: 100%; height: 600px; margin-top: 20px; border: 2px solid var(--border); background: repeating-linear-gradient( 0deg, rgba(0,0,0,0.15), rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px ); box-shadow: inset 0 0 50px rgba(0,0,0,0.8); }
+    .tag-cloud { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 40px; list-style: none; padding: 0; }
+    .tag-cloud a { color: var(--text); text-decoration: none; background: var(--border); padding: 6px 14px; border-radius: 20px; font-size: 0.9rem; transition: 0.2s; }
+    .tag-cloud a:hover { opacity: 0.8; }
+    .tag-count { opacity: 0.5; font-size: 0.8em; margin-left: 4px; }
     
     footer { margin-top: 80px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center; color: var(--nav-link); font-size: 0.8rem; }
   </style>
@@ -35,144 +29,100 @@
     <nav>
       <a href="/">首页</a>
       <a href="/archive/">归档</a>
-      <a href="/tags/" class="nav-active">技能面板</a>
+      <a href="/tags/" class="nav-active">标签</a>
       <a href="/tools/">工具</a>
       <a href="/about/">关于</a>
     </nav>
-    <div style="color: #6b1414; font-weight: bold;">[ SYSTEM ONLINE ]</div>
+    <div class="theme-toggle" onclick="toggleTheme()">🌓</div>
   </header>
 
-  <h1>生存技能树 (SKILL TREE)</h1>
-  <div class="subtitle">
-    >> 载入赵总数字属性面板...<br>
-    >> 核心主分支根据文章活跃度自动进化。子技能节点点击可查看对应档案。<br>
-    >> 经验值 (Lv) = 收录相关档案数量。
-  </div>
+  <h1>标签与图谱</h1>
+  <p style="color: var(--nav-link); font-size: 0.9em;">知识的漫游轨迹。节点越大，代表相关文章越多；连线代表它们曾被同时提及。</p>
   
   <div id="graph-container"></div>
 
-  <footer><p>© <span id="year"></span> {{ .Site.Title }} / PROJECT ZOMBOID STYLE</p></footer>
+  <ul class="tag-cloud">
+    {{ range .Data.Terms.ByCount }}
+    <li><a href="{{ .Page.RelPermalink }}">#{{ .Page.Title }} <span class="tag-count">{{ .Count }}</span></a></li>
+    {{ end }}
+  </ul>
+
+  <footer><p>© <span id="year"></span> {{ .Site.Title }}</p></footer>
 
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
-
-    // --- AI 自动分组算法与 ECharts 技能树渲染 ---
     
-    // 1. 获取所有标签和数量
-    let allTags = [];
-    {{ range .Data.Terms.ByCount }}
-      allTags.push({name: "{{ .Page.Title }}", count: {{ .Count }}, url: "{{ .Page.RelPermalink }}"});
+    function toggleTheme() { 
+      document.body.classList.toggle('dark-mode'); 
+      localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light'); 
+      initGraph(); // 切换主题时刷新图表颜色
+    }
+    if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
+
+    let graphNodes = [];
+    let graphLinks = [];
+
+    {{ range $name, $taxonomy := .Site.Taxonomies.tags }}
+      graphNodes.push({
+        id: "{{ $name | lower }}",
+        name: "{{ $name }}",
+        symbolSize: {{ add 15 (mul $taxonomy.Count 3) }},
+        url: "/tags/{{ $name | urlize }}/"
+      });
     {{ end }}
 
-    // 2. 获取标签共同出现的频率，用于判断“谁是谁的子技能”
-    let coOccurrences = {};
     {{ range .Site.RegularPages }}
       {{ $pageTags := .Params.tags }}
       {{ if $pageTags }}
         var currentTags = {{ $pageTags | jsonify }};
-        for(let i=0; i<currentTags.length; i++) {
-          for(let j=0; j<currentTags.length; j++) {
-            if(i !== j) {
-              let t1 = currentTags[i]; let t2 = currentTags[j];
-              coOccurrences[t1] = coOccurrences[t1] || {};
-              coOccurrences[t1][t2] = (coOccurrences[t1][t2] || 0) + 1;
+        if(currentTags && currentTags.length > 1) {
+          for(let i=0; i<currentTags.length; i++) {
+            for(let j=i+1; j<currentTags.length; j++) {
+              graphLinks.push({ source: currentTags[i].toLowerCase(), target: currentTags[j].toLowerCase() });
             }
           }
         }
       {{ end }}
     {{ end }}
 
-    // 3. 构建 ECharts Tree 需要的数据结构
-    let treeData = { 
-      name: '赵总\n(幸存者)', 
-      itemStyle: { color: '#6b1414', borderColor: '#fff', borderWidth: 2 }, 
-      symbolSize: [60, 40],
-      symbol: 'rect',
-      label: { color: '#fff', fontWeight: 'bold' },
-      children: [] 
-    };
+    let myChart = null;
+    function initGraph() {
+      if (myChart != null) myChart.dispose();
+      let dom = document.getElementById('graph-container');
+      if (!dom || graphNodes.length === 0) {
+          if(dom) dom.style.display = 'none';
+          return;
+      }
+      myChart = echarts.init(dom);
+      
+      let isDark = document.body.classList.contains('dark-mode');
+      let textColor = isDark ? '#dcdde1' : '#2c3e50';
+      let lineColor = isDark ? 'rgba(130, 170, 255, 0.2)' : 'rgba(52, 73, 94, 0.15)';
+      let nodeColor = isDark ? '#82aaff' : '#3498db';
 
-    if (allTags.length > 0) {
-        // 取前 3 大热门标签作为“主职业天赋树”
-        let numBranches = Math.min(3, allTags.length);
-        let branches = allTags.slice(0, numBranches);
-        let leaves = allTags.slice(numBranches);
-
-        branches.forEach(b => {
-            treeData.children.push({
-                name: b.name + '\nLv.' + b.count,
-                url: b.url,
-                symbol: 'rect',
-                symbolSize: [80, 40],
-                itemStyle: { color: '#2c3625', borderColor: '#748b67', borderWidth: 2 },
-                label: { color: '#d0dcd0' },
-                children: []
-            });
-        });
-
-        // 剩下的散碎标签，算作“分支技能”，挂载到关联最深的主技能下
-        leaves.forEach(l => {
-            let bestBranchIndex = 0;
-            let maxCo = -1;
-            for(let i=0; i<branches.length; i++) {
-                let branchName = branches[i].name;
-                let co = (coOccurrences[l.name] && coOccurrences[l.name][branchName]) ? coOccurrences[l.name][branchName] : 0;
-                if(co > maxCo) { maxCo = co; bestBranchIndex = i; }
-            }
-            treeData.children[bestBranchIndex].children.push({
-                name: l.name + '\nLv.' + l.count,
-                url: l.url,
-                symbol: 'rect',
-                symbolSize: [70, 30],
-                itemStyle: { color: '#141514', borderColor: '#4a5940', borderWidth: 1, borderType: 'dashed' },
-                label: { color: '#8f9c85', fontSize: 11 }
-            });
-        });
+      let option = {
+        tooltip: { formatter: '{b}' },
+        series: [{
+          type: 'graph',
+          layout: 'force',
+          data: graphNodes,
+          links: graphLinks,
+          roam: true,
+          label: { show: true, position: 'right', color: textColor, fontSize: 12 },
+          force: { repulsion: 250, edgeLength: 80 },
+          itemStyle: { color: nodeColor, borderColor: isDark ? '#121212' : '#fff', borderWidth: 2 },
+          lineStyle: { color: lineColor, curveness: 0.1, width: 2 }
+        }]
+      };
+      myChart.setOption(option);
+      
+      myChart.on('click', function (params) {
+        if (params.dataType === 'node' && params.data.url) window.location.href = params.data.url;
+      });
     }
 
-    // 4. 渲染技能树
-    let myChart = echarts.init(document.getElementById('graph-container'));
-    
-    let option = {
-      tooltip: { trigger: 'item', triggerOn: 'mousemove', backgroundColor: 'rgba(0,0,0,0.8)', borderColor: '#748b67', textStyle: { color: '#fff' } },
-      series: [
-        {
-          type: 'tree',
-          data: [treeData],
-          top: '5%', left: '10%', bottom: '5%', right: '20%',
-          symbolSize: 7,
-          layout: 'orthogonal', // 树状布局 (从左到右)
-          orient: 'LR',
-          edgeShape: 'polyline', // 僵尸毁灭工程里的折线科技树感
-          initialTreeDepth: 2,
-          lineStyle: { color: '#4a5940', width: 2, type: 'solid' },
-          label: {
-            position: 'inside',
-            verticalAlign: 'middle',
-            align: 'center',
-            fontSize: 12,
-            fontFamily: 'Courier New'
-          },
-          leaves: {
-            label: { position: 'inside', verticalAlign: 'middle', align: 'center' }
-          },
-          expandAndCollapse: true,
-          animationDuration: 550,
-          animationDurationUpdate: 750
-        }
-      ]
-    };
-    
-    myChart.setOption(option);
-    
-    // 点击技能块直接进入标签页
-    myChart.on('click', function (params) {
-      if (params.data.url) {
-        window.location.href = params.data.url;
-      }
-    });
-
-    window.addEventListener('resize', function() { myChart.resize(); });
+    setTimeout(initGraph, 100);
+    window.addEventListener('resize', function() { if(myChart) myChart.resize(); });
   </script>
 </body>
 </html>
