@@ -13,15 +13,9 @@
     .nav-active { color: var(--text) !important; border-bottom-color: var(--text) !important; font-weight: 500; }
     .theme-toggle { cursor: pointer; font-size: 1.2rem; line-height: 1; }
     h1 { font-size: 2.2rem; margin: 40px 0 10px; font-weight: 700; }
-    
-    #graph-container { width: 100%; height: 60vh; min-height: 400px; max-height: 550px; margin-top: 30px; border-radius: 12px; background: var(--bg); border: 1px solid var(--border); box-shadow: inset 0 0 30px rgba(0,0,0,0.03); overflow: hidden; cursor: grab; }
-    #graph-container:active { cursor: grabbing; }
-    
+    #graph-container { width: 100%; height: 60vh; min-height: 400px; max-height: 550px; margin-top: 30px; border-radius: 12px; background: var(--bg); border: 1px solid var(--border); box-shadow: inset 0 0 30px rgba(0,0,0,0.03); overflow: hidden; }
     .tag-cloud { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 40px; list-style: none; padding: 0; }
     .tag-cloud a { color: var(--text); text-decoration: none; background: var(--border); padding: 6px 14px; border-radius: 20px; font-size: 0.9rem; transition: 0.2s; }
-    .tag-cloud a:hover { opacity: 0.8; }
-    .tag-count { opacity: 0.5; font-size: 0.8em; margin-left: 4px; }
-    
     footer { margin-top: 80px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center; color: var(--nav-link); font-size: 0.8rem; }
   </style>
 </head>
@@ -30,69 +24,67 @@
     <nav>
       <a href="/">首页</a>
       <a href="/archive/">归档</a>
-      <a href="/tags/" class="nav-active">大脑图谱</a>
+      <a href="/tags/" class="nav-active">标签</a>
       <a href="/tools/">工具</a>
       <a href="/about/">关于</a>
     </nav>
     <div class="theme-toggle" onclick="toggleTheme()">🌓</div>
   </header>
 
-  <h1>大脑图谱 (Graph View)</h1>
-  <p style="color: var(--nav-link); font-size: 0.9em;">完全物理引擎驱动。滚轮缩放与拖拽。节点越大代表档案越丰富，连线代表在同一日记提及。休眠节点（无连线）将沉淀为中性颜色。</p>
+  <h1>标签与图谱</h1>
+  <p style="color: var(--nav-link); font-size: 0.9em;">知识的大脑漫游。深色大圆点为核心领域，彩色小圆点为生长分支，灰色为独立节点。</p>
   
   <div id="graph-container"></div>
 
   <ul class="tag-cloud">
     {{ range .Data.Terms.ByCount }}
-    <li><a href="{{ .Page.RelPermalink }}">#{{ .Page.Title }} <span class="tag-count">{{ .Count }}</span></a></li>
+    <li><a href="{{ .Page.RelPermalink }}">#{{ .Page.Title }} <span style="opacity:0.5; font-size:0.8em;">{{ .Count }}</span></a></li>
     {{ end }}
   </ul>
 
-  <footer><p>© <span id="year"></span> {{ .Site.Title }} / obsidian style</p></footer>
+  <footer><p>© <span id="year"></span> {{ .Site.Title }}</p></footer>
 
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
     let myGraph = null;
-    let maxCount = 0; // 用于计算颜色渐变的归一化基准
 
     function toggleTheme() { 
       document.body.classList.toggle('dark-mode'); 
       localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light'); 
-      if (myGraph) updateGraphTheme();
+      if (myGraph) myGraph.refresh(); // 刷新画布颜色
     }
     if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
 
-    // 1. 数据提取 (强制 urlize 对齐)
-    let graphNodes = [];
-    let graphLinks = [];
-    let allTagsMap = {}; // 用于判定节点是否孤立
-    
+    // 1. 数据准备
+    const graphData = { nodes: [], links: [] };
+    const nodesMap = {};
+    let maxVal = 1;
+
     {{ range .Data.Terms.ByCount }}
-      if ({{ .Count }} > maxCount) maxCount = {{ .Count }};
-      let tagId = "{{ .Page.Title | urlize }}";
-      graphNodes.push({
-        id: tagId,
-        name: "{{ .Page.Title }}",
-        val: {{ .Count }}, 
-        url: "/tags/{{ .Page.Title | urlize }}/",
-        isConnected: false // 初始化为未连接
-      });
-      allTagsMap[tagId] = graphNodes[graphNodes.length - 1];
+      (function() {
+        const id = {{ .Page.Title | urlize | jsonify }};
+        const name = {{ .Page.Title | jsonify }};
+        const val = {{ .Count }};
+        if (val > maxVal) maxVal = val;
+        const node = { id, name, val, isConnected: false, url: {{ .Page.RelPermalink | jsonify }} };
+        graphData.nodes.push(node);
+        nodesMap[id] = node;
+      })();
     {{ end }}
 
     {{ range .Site.RegularPages }}
       {{ with .Params.tags }}
         {{ if gt (len .) 1 }}
           (function() {
-            let pageTags = [{{ range . }}"{{ . | urlize }}",{{ end }}];
-            for(let i=0; i<pageTags.length; i++) {
-              for(let j=i+1; j<pageTags.length; j++) {
-                let s = pageTags[i];
-                let t = pageTags[j];
-                graphLinks.push({ source: s, target: t });
-                // 将这两个节点标记为“已连接”
-                if(allTagsMap[s]) allTagsMap[s].isConnected = true;
-                if(allTagsMap[t]) allTagsMap[t].isConnected = true;
+            const tags = [{{ range . }}{{ . | urlize | jsonify }},{{ end }}];
+            for (let i = 0; i < tags.length; i++) {
+              for (let j = i + 1; j < tags.length; j++) {
+                const s = tags[i], t = tags[j];
+                if (nodesMap[s] && nodesMap[t]) {
+                  graphData.links.push({ source: s, target: t });
+                  nodesMap[s].isConnected = true;
+                  nodesMap[t].isConnected = true;
+                }
               }
             }
           })();
@@ -100,114 +92,59 @@
       {{ end }}
     {{ end }}
 
-    // 2. 「全息生长」配色引擎核心算法
+    // 2. 配色函数
     function getNodeColor(node, isDark) {
-      if (!node.isConnected) {
-        // --- A. 独立沉淀/休眠节点 (中性颜色) ---
-        // 白天：沉稳灰色 / 深夜：泥土墨绿色
-        return isDark ? 'rgba(74, 89, 64, 0.4)' : 'rgba(189, 195, 199, 0.6)';
+      if (!node.isConnected) return isDark ? '#333' : '#ccc';
+      const activity = Math.min(1, Math.log2(node.val + 1) / Math.log2(maxVal + 2));
+      if (isDark) {
+        return activity > 0.6 ? '#9a73ff' : '#00d2d3'; // 枢纽紫 vs 生长青
       } else {
-        // --- B. 连接生长节点 (应用活跃度渐变) ---
-        // 归一化活跃度 (0-1)
-        const activity = Math.min(1, Math.log2(node.val + 1) / Math.log2(maxCount + 2));
-        
-        // 白天模式渐变 (明亮色系)
-        const lightModeCore = {r: 44, g: 62, b: 80};   // 枢纽：成熟深蓝
-        const lightModeEdge = {r: 52, g: 152, b: 219}; // 边缘：活力亮蓝
-        
-        // 深夜模式渐变 (科技感色系)
-        const darkModeCore = {r: 107, g: 63, b: 160};  // 枢纽：迷幻深紫
-        const darkModeEdge = {r: 0, g: 210, b: 211};   // 边缘：科技感青色
-
-        const start = isDark ? darkModeCore : lightModeCore;
-        const end = isDark ? darkModeEdge : lightModeEdge;
-
-        // 线性插值计算颜色 (核心文章数越多，越靠近枢纽颜色；文章数越少，越靠近边缘颜色)
-        const r = Math.round(start.r + (end.r - start.r) * (1 - activity));
-        const g = Math.round(start.g + (end.g - start.g) * (1 - activity));
-        const b = Math.round(start.b + (end.b - start.b) * (1 - activity));
-        
-        // 枢纽节点透明度高一点，模拟稳定内核
-        const alpha = 0.7 + (activity * 0.2); 
-        
-        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        return activity > 0.6 ? '#6b3fa0' : '#3498db'; // 枢纽深紫 vs 活力蓝
       }
     }
 
-    // 3. 主题色更新逻辑 (包括连线)
-    function updateGraphTheme() {
-      let isDark = document.body.classList.contains('dark-mode');
-      // 连线：白天浅灰 / 夜间幽灵蓝
-      myGraph.linkColor(() => isDark ? 'rgba(130, 170, 255, 0.15)' : 'rgba(189, 195, 199, 0.4)');
-      // 枢纽节点放大倍数稍微增加，增加枢纽感
-      myGraph.d3Force('charge').strength(-300);
-      myGraph.d3Force('link').distance(90);
-    }
-
-    // 4. 初始化图谱引擎
-    function initGraph() {
-      const elem = document.getElementById('graph-container');
-      if (!elem || graphNodes.length === 0) {
-          if(elem) elem.style.display = 'none';
-          return;
-      }
-      
-      let isDark = document.body.classList.contains('dark-mode');
-
-      myGraph = ForceGraph()(elem)
-        .graphData({ nodes: graphNodes, links: graphLinks })
+    // 3. 初始化引擎
+    function init() {
+      const container = document.getElementById('graph-container');
+      myGraph = ForceGraph()(container)
+        .graphData(graphData)
         .nodeId('id')
         .nodeVal('val')
         .nodeLabel('') 
-        // 核心自定义 Canvas 渲染 (画圆 + 画字)
+        .backgroundColor('rgba(0,0,0,0)')
         .nodeCanvasObject((node, ctx, globalScale) => {
-          // 枢纽放大公式调优，让核心更突出
-          const r = Math.sqrt(Math.max(0, node.val || 1)) * 4 + 3; 
-          
+          const isDark = document.body.classList.contains('dark-mode');
+          const r = Math.sqrt(node.val) * 4 + 2;
           ctx.beginPath();
           ctx.arc(node.x, node.y, r, 0, 2 * Math.PI, false);
-          
-          // 获取「全息生长」动态颜色
-          ctx.fillStyle = getNodeColor(node, document.body.classList.contains('dark-mode'));
+          ctx.fillStyle = getNodeColor(node, isDark);
           ctx.fill();
 
-          // 画字 ( Obsidian 呼吸感字体显示逻辑 )
           const label = node.name;
-          // 缩小视野时才保证基本显示，放大视野时不显示巨大字体
-          const fontSize = Math.max(12 / globalScale, 6); 
-          ctx.font = `${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+          const fontSize = Math.max(12 / globalScale, 5);
+          ctx.font = `${fontSize}px Sans-Serif`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'top';
-          // 休眠节点文字稍淡
-          ctx.fillStyle = node.isConnected ? (document.body.classList.contains('dark-mode') ? 'rgba(220, 221, 225, 0.9)' : 'rgba(44, 62, 80, 0.9)') : 'rgba(128, 128, 128, 0.6)';
-          
-          ctx.fillText(label, node.x, node.y + r + (4 / globalScale));
+          ctx.fillStyle = isDark ? 'rgba(220, 221, 225, 0.7)' : 'rgba(44, 62, 80, 0.7)';
+          ctx.fillText(label, node.x, node.y + r + 2);
         })
-        .linkColor(() => isDark ? 'rgba(130, 170, 255, 0.15)' : 'rgba(189, 195, 199, 0.4)')
-        .linkWidth(isDark ? 2 : 1.5)
-        .onNodeClick(node => {
-          if (node.url) window.location.href = node.url;
-        })
-        .onNodeHover(node => {
-          elem.style.cursor = node ? 'pointer' : 'grab';
-        });
+        .linkColor(() => document.body.classList.contains('dark-mode') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)')
+        .linkWidth(1)
+        .onNodeClick(node => window.location.href = node.url)
+        .onNodeHover(node => container.style.cursor = node ? 'pointer' : 'grab')
+        .d3Force('charge').strength(-150);
 
-      updateGraphTheme();
-
-      // 默认居中适配
-      myGraph.onEngineStop(() => {
-        myGraph.zoomToFit(800, 60); // 加长一点进场动画，更优雅
+      // 自动居中
+      myGraph.onEngineStop(() => myGraph.zoomToFit(600, 50));
+      
+      const ro = new ResizeObserver(() => {
+        myGraph.width(container.clientWidth);
+        myGraph.height(container.clientHeight);
       });
-
-      // 自适应容器
-      let resizeObserver = new ResizeObserver(() => {
-        myGraph.width(elem.clientWidth);
-        myGraph.height(elem.clientHeight);
-      });
-      resizeObserver.observe(elem);
+      ro.observe(container);
     }
 
-    setTimeout(initGraph, 50);
+    setTimeout(init, 100);
   </script>
 </body>
 </html>
