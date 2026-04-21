@@ -2,23 +2,25 @@
 <html lang="zh" style="scrollbar-gutter: stable;">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>标签: {{ .Title }} - {{ .Site.Title }}</title>
+  <title>#{{ .Title }} - {{ .Site.Title }}</title>
   <style>
     :root { --bg: #fff; --text: #2c3e50; --link: #34495e; --border: #eee; --nav-link: #7f8c8d; }
     .dark-mode { --bg: #121212; --text: #dcdde1; --link: #82aaff; --border: #2f3640; --nav-link: #95a5a6; }
     body { background: var(--bg); color: var(--text); max-width: 780px; margin: 0 auto; padding: 0 25px 60px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.8; transition: background-color 0.3s; }
     header { display: flex; justify-content: space-between; align-items: center; padding: 30px 0; border-bottom: 1px solid var(--border); margin-bottom: 40px; height: 32px; }
     nav a { margin-right: 25px; color: var(--nav-link); text-decoration: none; font-size: 0.95rem; border-bottom: 2px solid transparent; padding-bottom: 4px; transition: 0.2s; }
-    .nav-active { color: var(--text) !important; border-bottom-color: var(--text) !important;  }
+    .nav-active { color: var(--text) !important; border-bottom-color: var(--text) !important; font-weight: 500; }
     .theme-toggle { cursor: pointer; font-size: 1.2rem; line-height: 1; }
-    h1 { font-size: 2.2rem; margin: 40px 0 20px; text-align: left; color: var(--nav-link); font-weight: 700; }
-    h1 span { color: var(--text); }
-    ul { list-style: none; padding: 0; margin-top: 30px; }
+    h1 { font-size: 2.2rem; margin: 40px 0 10px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+    .tag-badge { background: var(--border); padding: 2px 12px; border-radius: 8px; color: var(--text); font-size: 1.8rem; }
+    ul { list-style: none; padding: 0; margin-top: 40px; }
     li { margin-bottom: 18px; display: flex; align-items: baseline; }
     time { color: var(--nav-link); font-family: monospace; width: 110px; flex-shrink: 0; }
-    a { color: var(--link); text-decoration: none; }
+    a { color: var(--link); text-decoration: none; transition: 0.2s; }
+    a:hover { opacity: 0.7; }
+    .back-link { display: inline-block; margin-top: 40px; font-size: 0.9rem; color: var(--nav-link); text-decoration: none; padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px; transition: 0.2s; }
+    .back-link:hover { background: var(--border); color: var(--text); }
     footer { margin-top: 80px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center; color: var(--nav-link); font-size: 0.8rem; }
-      @media (max-width: 600px) { nav a { margin-right: 14px; font-size: 0.82rem; } }
   </style>
 </head>
 <body>
@@ -32,14 +34,24 @@
     </nav>
     <div class="theme-toggle" onclick="toggleTheme()">🌓</div>
   </header>
-  <h1>包含标签 <span>#{{ .Title }}</span> 的文章</h1>
-  <ul>{{ range .Pages }}<li><time>{{ .Date.Format "2006-01-02" }}</time><a href="{{ .RelPermalink }}">{{ .Title }}</a></li>{{ end }}</ul>
-  <div style="margin-top: 40px;"><a href="/tags/" style="color: var(--nav-link); font-size: 0.9em;">← 查看所有标签</a></div>
+
+  <h1>相关档案：<span class="tag-badge">#{{ .Title }}</span></h1>
+  <p style="color: var(--nav-link); font-size: 0.9em;">共收录 {{ len .Pages }} 篇与此相关的日记。</p>
+  
+  <ul>
+    {{ range .Pages }}
+    <li><time>{{ .Date.Format "2006-01-02" }}</time><a href="{{ .RelPermalink }}">{{ .Title }}</a></li>
+    {{ end }}
+  </ul>
+
+  <a href="/tags/" class="back-link">← 返回全站图谱</a>
+
   <footer><p>© <span id="year"></span> {{ .Site.Title }}</p></footer>
+
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
-    function toggleTheme() { document.body.classList.toggle('dark-mode'); localStorage.setItem('theme', document.body.classList.contains('dark-mode')?'dark':'light'); }
-    if (localStorage.getItem('theme')==='dark') document.body.classList.add('dark-mode');
+    function toggleTheme() { document.body.classList.toggle('dark-mode'); localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light'); }
+    if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
   </script>
 </body>
 </html>
