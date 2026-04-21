@@ -4,6 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>标签与图谱 - {{ .Site.Title }}</title>
   <script src="https://unpkg.com/force-graph"></script>
+  <script src="https://d3js.org/d3-force.v3.min.js"></script>
   <style>
     :root { --bg: #fff; --text: #2c3e50; --link: #34495e; --border: #eee; --nav-link: #7f8c8d; }
     .dark-mode { --bg: #121212; --text: #dcdde1; --link: #82aaff; --border: #2f3640; --nav-link: #95a5a6; }
@@ -51,11 +52,10 @@
     function toggleTheme() { 
       document.body.classList.toggle('dark-mode'); 
       localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light'); 
-      if (myGraph) myGraph.refresh(); // 刷新画布颜色
+      if (myGraph) myGraph.refresh(); 
     }
     if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
 
-    // 1. 数据准备
     const graphData = { nodes: [], links: [] };
     const nodesMap = {};
     let maxVal = 1;
@@ -92,18 +92,16 @@
       {{ end }}
     {{ end }}
 
-    // 2. 配色函数
     function getNodeColor(node, isDark) {
       if (!node.isConnected) return isDark ? '#333' : '#ccc';
       const activity = Math.min(1, Math.log2(node.val + 1) / Math.log2(maxVal + 2));
       if (isDark) {
-        return activity > 0.6 ? '#9a73ff' : '#00d2d3'; // 枢纽紫 vs 生长青
+        return activity > 0.6 ? '#9a73ff' : '#00d2d3'; 
       } else {
-        return activity > 0.6 ? '#6b3fa0' : '#3498db'; // 枢纽深紫 vs 活力蓝
+        return activity > 0.6 ? '#6b3fa0' : '#3498db'; 
       }
     }
 
-    // 3. 初始化引擎
     function init() {
       const container = document.getElementById('graph-container');
       myGraph = ForceGraph()(container)
@@ -112,6 +110,8 @@
         .nodeVal('val')
         .nodeLabel('') 
         .backgroundColor('rgba(0,0,0,0)')
+        // 【优化 1】让引擎只计算 100 帧（瞬间完成物理碰撞），不要一直算
+        .cooldownTicks(100)
         .nodeCanvasObject((node, ctx, globalScale) => {
           const isDark = document.body.classList.contains('dark-mode');
           const r = Math.sqrt(node.val) * 4 + 2;
@@ -131,11 +131,21 @@
         .linkColor(() => document.body.classList.contains('dark-mode') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)')
         .linkWidth(1)
         .onNodeClick(node => window.location.href = node.url)
-        .onNodeHover(node => container.style.cursor = node ? 'pointer' : 'grab')
-        .d3Force('charge').strength(-150);
+        .onNodeHover(node => container.style.cursor = node ? 'pointer' : 'grab');
 
-      // 自动居中
-      myGraph.onEngineStop(() => myGraph.zoomToFit(600, 50));
+      // 【优化 2】引入中心引力！不管怎么排斥，所有节点死死锚定在 (0,0) 坐标附近
+      if (typeof d3 !== 'undefined') {
+        myGraph.d3Force('center', d3.forceCenter(0, 0));
+        myGraph.d3Force('charge', d3.forceManyBody().strength(-150));
+      }
+
+      // 【优化 3】双保险居中：引擎停止时居中一次，500ms 后强制再居中一次，绝不让它跑掉
+      myGraph.onEngineStop(() => {
+        myGraph.zoomToFit(400, 50);
+      });
+      setTimeout(() => {
+        if(myGraph) myGraph.zoomToFit(400, 50);
+      }, 500);
       
       const ro = new ResizeObserver(() => {
         myGraph.width(container.clientWidth);
