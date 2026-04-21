@@ -27,14 +27,19 @@
     #back-to-top.visible { opacity: 0.6; }
     #back-to-top:hover { opacity: 1; }
     /* TOC - 去黑点，加高亮 */
+    #toc ul, #toc ol { list-style: none; padding-left: 12px; margin: 4px 0; }
+    #toc > ul { padding-left: 0; }
     #toc { background: var(--toc-bg); padding: 15px 15px 15px 18px; border-radius: 8px; margin-bottom: 30px; font-size: 0.9rem; border: 1px solid var(--border); }
-    #toc ul { list-style: none; padding-left: 10px; margin: 4px 0; }
+    #toc ul, #toc ol { list-style: none; padding-left: 12px; margin: 4px 0; }
+    #toc > ul { padding-left: 0; }
     #toc > ul { padding-left: 0; margin: 0; }
     #toc li { margin: 5px 0; }
     #toc a { color: var(--nav-link); text-decoration: none; transition: color 0.2s, border-left 0.2s; display: block; padding-left: 0; border-left: 2px solid transparent; }
     #toc a:hover { color: var(--text); }
     #toc a.toc-active { color: var(--text); border-left: 2px solid var(--text); padding-left: 6px; }
-    @media (min-width: 1250px) { #toc { position: fixed; left: calc(50% + 420px); top: 100px; width: 240px; border: none; background: transparent; } }
+    @media (min-width: 1250px) { #toc ul, #toc ol { list-style: none; padding-left: 12px; margin: 4px 0; }
+    #toc > ul { padding-left: 0; }
+    #toc { position: fixed; left: calc(50% + 420px); top: 100px; width: 240px; border: none; background: transparent; } }
     /* 标签 */
     .tag-link { background: var(--border); padding: 2px 8px; border-radius: 4px; font-size: 0.85em; margin-right: 8px; color: var(--nav-link); text-decoration: none; }
     footer { margin-top: 80px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center; color: var(--nav-link); font-size: 0.8rem; }
