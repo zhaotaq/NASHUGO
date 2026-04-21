@@ -55,33 +55,38 @@
     function toggleTheme() { 
       document.body.classList.toggle('dark-mode'); 
       localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light'); 
-      initGraph(); // 切换主题时刷新图表颜色
+      initGraph(); 
     }
     if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
 
     let graphNodes = [];
     let graphLinks = [];
 
+    // 1. 确保节点的 ID 强制使用 Hugo 的 urlize 标准化编码
     {{ range $name, $taxonomy := .Site.Taxonomies.tags }}
       graphNodes.push({
-        id: "{{ $name | lower }}",
+        id: "{{ $name | urlize }}",
         name: "{{ $name }}",
         symbolSize: {{ add 15 (mul $taxonomy.Count 3) }},
         url: "/tags/{{ $name | urlize }}/"
       });
     {{ end }}
 
+    // 2. 确保连线的两端也强制使用 urlize，实现 100% 精准咬合
     {{ range .Site.RegularPages }}
-      {{ $pageTags := .Params.tags }}
-      {{ if $pageTags }}
-        var currentTags = {{ $pageTags | jsonify }};
-        if(currentTags && currentTags.length > 1) {
-          for(let i=0; i<currentTags.length; i++) {
-            for(let j=i+1; j<currentTags.length; j++) {
-              graphLinks.push({ source: currentTags[i].toLowerCase(), target: currentTags[j].toLowerCase() });
+      {{ with .Params.tags }}
+        {{ if gt (len .) 1 }}
+          (function() {
+            let pageTags = [
+              {{ range . }}"{{ . | urlize }}",{{ end }}
+            ];
+            for(let i = 0; i < pageTags.length; i++) {
+              for(let j = i + 1; j < pageTags.length; j++) {
+                graphLinks.push({ source: pageTags[i], target: pageTags[j] });
+              }
             }
-          }
-        }
+          })();
+        {{ end }}
       {{ end }}
     {{ end }}
 
@@ -97,7 +102,8 @@
       
       let isDark = document.body.classList.contains('dark-mode');
       let textColor = isDark ? '#dcdde1' : '#2c3e50';
-      let lineColor = isDark ? 'rgba(130, 170, 255, 0.2)' : 'rgba(52, 73, 94, 0.15)';
+      // 稍微加深了连线的透明度，让线更清晰
+      let lineColor = isDark ? 'rgba(130, 170, 255, 0.4)' : 'rgba(52, 73, 94, 0.3)';
       let nodeColor = isDark ? '#82aaff' : '#3498db';
 
       let option = {
@@ -109,7 +115,7 @@
           links: graphLinks,
           roam: true,
           label: { show: true, position: 'right', color: textColor, fontSize: 12 },
-          force: { repulsion: 250, edgeLength: 80 },
+          force: { repulsion: 250, edgeLength: 100 },
           itemStyle: { color: nodeColor, borderColor: isDark ? '#121212' : '#fff', borderWidth: 2 },
           lineStyle: { color: lineColor, curveness: 0.1, width: 2 }
         }]
