@@ -2,7 +2,7 @@
 <html lang="zh" style="scrollbar-gutter: stable;">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>大脑图谱 - {{ .Site.Title }}</title>
+  <title>标签与图谱 - {{ .Site.Title }}</title>
   <script src="https://unpkg.com/force-graph"></script>
   <style>
     :root { --bg: #fff; --text: #2c3e50; --link: #34495e; --border: #eee; --nav-link: #7f8c8d; }
@@ -14,20 +14,7 @@
     .theme-toggle { cursor: pointer; font-size: 1.2rem; line-height: 1; }
     h1 { font-size: 2.2rem; margin: 40px 0 10px; font-weight: 700; }
     
-    /* 响应式图谱容器：针对手机端优化高度，加入细腻内阴影 */
-    #graph-container { 
-      width: 100%; 
-      height: 60vh; 
-      min-height: 400px; 
-      max-height: 550px; 
-      margin-top: 30px; 
-      border-radius: 12px; 
-      background: var(--bg); 
-      border: 1px solid var(--border); 
-      box-shadow: inset 0 0 20px rgba(0,0,0,0.02); 
-      overflow: hidden; 
-      cursor: grab;
-    }
+    #graph-container { width: 100%; height: 60vh; min-height: 400px; max-height: 550px; margin-top: 30px; border-radius: 12px; background: var(--bg); border: 1px solid var(--border); box-shadow: inset 0 0 30px rgba(0,0,0,0.03); overflow: hidden; cursor: grab; }
     #graph-container:active { cursor: grabbing; }
     
     .tag-cloud { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 40px; list-style: none; padding: 0; }
@@ -43,15 +30,15 @@
     <nav>
       <a href="/">首页</a>
       <a href="/archive/">归档</a>
-      <a href="/tags/" class="nav-active">标签</a>
+      <a href="/tags/" class="nav-active">大脑图谱</a>
       <a href="/tools/">工具</a>
       <a href="/about/">关于</a>
     </nav>
     <div class="theme-toggle" onclick="toggleTheme()">🌓</div>
   </header>
 
-  <h1>标签与图谱</h1>
-  <p style="color: var(--nav-link); font-size: 0.9em;">支持双指缩放与拖拽漫游。节点越大约核心，连线代表在日记中曾被共同提及。</p>
+  <h1>大脑图谱 (Graph View)</h1>
+  <p style="color: var(--nav-link); font-size: 0.9em;">完全物理引擎驱动。滚轮缩放与拖拽。节点越大代表档案越丰富，连线代表在同一日记提及。休眠节点（无连线）将沉淀为中性颜色。</p>
   
   <div id="graph-container"></div>
 
@@ -61,12 +48,13 @@
     {{ end }}
   </ul>
 
-  <footer><p>© <span id="year"></span> {{ .Site.Title }}</p></footer>
+  <footer><p>© <span id="year"></span> {{ .Site.Title }} / obsidian style</p></footer>
 
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
     let myGraph = null;
-    
+    let maxCount = 0; // 用于计算颜色渐变的归一化基准
+
     function toggleTheme() { 
       document.body.classList.toggle('dark-mode'); 
       localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light'); 
@@ -74,17 +62,22 @@
     }
     if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
 
-    // 数据提取 (强制 urlize 对齐)
+    // 1. 数据提取 (强制 urlize 对齐)
     let graphNodes = [];
     let graphLinks = [];
-
-    {{ range $name, $taxonomy := .Site.Taxonomies.tags }}
+    let allTagsMap = {}; // 用于判定节点是否孤立
+    
+    {{ range .Data.Terms.ByCount }}
+      if ({{ .Count }} > maxCount) maxCount = {{ .Count }};
+      let tagId = "{{ .Page.Title | urlize }}";
       graphNodes.push({
-        id: "{{ $name | urlize }}",
-        name: "{{ $name }}",
+        id: tagId,
+        name: "{{ .Page.Title }}",
         val: {{ .Count }}, 
-        url: "/tags/{{ $name | urlize }}/"
+        url: "/tags/{{ .Page.Title | urlize }}/",
+        isConnected: false // 初始化为未连接
       });
+      allTagsMap[tagId] = graphNodes[graphNodes.length - 1];
     {{ end }}
 
     {{ range .Site.RegularPages }}
@@ -94,7 +87,12 @@
             let pageTags = [{{ range . }}"{{ . | urlize }}",{{ end }}];
             for(let i=0; i<pageTags.length; i++) {
               for(let j=i+1; j<pageTags.length; j++) {
-                graphLinks.push({ source: pageTags[i], target: pageTags[j] });
+                let s = pageTags[i];
+                let t = pageTags[j];
+                graphLinks.push({ source: s, target: t });
+                // 将这两个节点标记为“已连接”
+                if(allTagsMap[s]) allTagsMap[s].isConnected = true;
+                if(allTagsMap[t]) allTagsMap[t].isConnected = true;
               }
             }
           })();
@@ -102,12 +100,51 @@
       {{ end }}
     {{ end }}
 
-    // 主题色更新逻辑
-    function updateGraphTheme() {
-      let isDark = document.body.classList.contains('dark-mode');
-      myGraph.linkColor(() => isDark ? 'rgba(130, 170, 255, 0.3)' : 'rgba(52, 73, 94, 0.2)');
+    // 2. 「全息生长」配色引擎核心算法
+    function getNodeColor(node, isDark) {
+      if (!node.isConnected) {
+        // --- A. 独立沉淀/休眠节点 (中性颜色) ---
+        // 白天：沉稳灰色 / 深夜：泥土墨绿色
+        return isDark ? 'rgba(74, 89, 64, 0.4)' : 'rgba(189, 195, 199, 0.6)';
+      } else {
+        // --- B. 连接生长节点 (应用活跃度渐变) ---
+        // 归一化活跃度 (0-1)
+        const activity = Math.min(1, Math.log2(node.val + 1) / Math.log2(maxCount + 2));
+        
+        // 白天模式渐变 (明亮色系)
+        const lightModeCore = {r: 44, g: 62, b: 80};   // 枢纽：成熟深蓝
+        const lightModeEdge = {r: 52, g: 152, b: 219}; // 边缘：活力亮蓝
+        
+        // 深夜模式渐变 (科技感色系)
+        const darkModeCore = {r: 107, g: 63, b: 160};  // 枢纽：迷幻深紫
+        const darkModeEdge = {r: 0, g: 210, b: 211};   // 边缘：科技感青色
+
+        const start = isDark ? darkModeCore : lightModeCore;
+        const end = isDark ? darkModeEdge : lightModeEdge;
+
+        // 线性插值计算颜色 (核心文章数越多，越靠近枢纽颜色；文章数越少，越靠近边缘颜色)
+        const r = Math.round(start.r + (end.r - start.r) * (1 - activity));
+        const g = Math.round(start.g + (end.g - start.g) * (1 - activity));
+        const b = Math.round(start.b + (end.b - start.b) * (1 - activity));
+        
+        // 枢纽节点透明度高一点，模拟稳定内核
+        const alpha = 0.7 + (activity * 0.2); 
+        
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+      }
     }
 
+    // 3. 主题色更新逻辑 (包括连线)
+    function updateGraphTheme() {
+      let isDark = document.body.classList.contains('dark-mode');
+      // 连线：白天浅灰 / 夜间幽灵蓝
+      myGraph.linkColor(() => isDark ? 'rgba(130, 170, 255, 0.15)' : 'rgba(189, 195, 199, 0.4)');
+      // 枢纽节点放大倍数稍微增加，增加枢纽感
+      myGraph.d3Force('charge').strength(-300);
+      myGraph.d3Force('link').distance(90);
+    }
+
+    // 4. 初始化图谱引擎
     function initGraph() {
       const elem = document.getElementById('graph-container');
       if (!elem || graphNodes.length === 0) {
@@ -121,33 +158,33 @@
         .graphData({ nodes: graphNodes, links: graphLinks })
         .nodeId('id')
         .nodeVal('val')
-        // 关闭默认的 Hover 提示框，因为我们直接画了文字
         .nodeLabel('') 
-        // 核心：自定义 Canvas 渲染 (画圆 + 画字)
+        // 核心自定义 Canvas 渲染 (画圆 + 画字)
         .nodeCanvasObject((node, ctx, globalScale) => {
-          // 1. 根据文章数量计算节点大小
-          const r = Math.sqrt(Math.max(0, node.val || 1)) * 4 + 2; 
+          // 枢纽放大公式调优，让核心更突出
+          const r = Math.sqrt(Math.max(0, node.val || 1)) * 4 + 3; 
           
-          // 2. 绘制原点
           ctx.beginPath();
           ctx.arc(node.x, node.y, r, 0, 2 * Math.PI, false);
-          // 颜色：白天清爽蓝，夜间科技蓝
-          ctx.fillStyle = document.body.classList.contains('dark-mode') ? '#82aaff' : '#3498db'; 
+          
+          // 获取「全息生长」动态颜色
+          ctx.fillStyle = getNodeColor(node, document.body.classList.contains('dark-mode'));
           ctx.fill();
 
-          // 3. 绘制文字标签
+          // 画字 ( Obsidian 呼吸感字体显示逻辑 )
           const label = node.name;
-          // 动态计算字体大小：放大时不会过大，缩小时保证能看见基本轮廓
+          // 缩小视野时才保证基本显示，放大视野时不显示巨大字体
           const fontSize = Math.max(12 / globalScale, 6); 
           ctx.font = `${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'top';
-          // 文字颜色随主题变化
-          ctx.fillStyle = document.body.classList.contains('dark-mode') ? 'rgba(220, 221, 225, 0.9)' : 'rgba(44, 62, 80, 0.9)';
-          // 将文字放在圆点正下方一点点
+          // 休眠节点文字稍淡
+          ctx.fillStyle = node.isConnected ? (document.body.classList.contains('dark-mode') ? 'rgba(220, 221, 225, 0.9)' : 'rgba(44, 62, 80, 0.9)') : 'rgba(128, 128, 128, 0.6)';
+          
           ctx.fillText(label, node.x, node.y + r + (4 / globalScale));
         })
-        .linkWidth(isDark ? 1.5 : 1)
+        .linkColor(() => isDark ? 'rgba(130, 170, 255, 0.15)' : 'rgba(189, 195, 199, 0.4)')
+        .linkWidth(isDark ? 2 : 1.5)
         .onNodeClick(node => {
           if (node.url) window.location.href = node.url;
         })
@@ -157,16 +194,12 @@
 
       updateGraphTheme();
 
-      // 【重点修复】调优物理引擎的斥力和距离，防止节点挤在一起
-      myGraph.d3Force('charge').strength(-250);
-      myGraph.d3Force('link').distance(80);
-
-      // 【重点修复】默认居中适配！当引擎完成初步布局后，自动缩放并居中到视图内
+      // 默认居中适配
       myGraph.onEngineStop(() => {
-        myGraph.zoomToFit(600, 50); // 600ms 平滑动画，四周留白 50px
+        myGraph.zoomToFit(800, 60); // 加长一点进场动画，更优雅
       });
 
-      // 监听容器大小变化，比如手机横竖屏切换时自动重绘
+      // 自适应容器
       let resizeObserver = new ResizeObserver(() => {
         myGraph.width(elem.clientWidth);
         myGraph.height(elem.clientHeight);
