@@ -2,7 +2,7 @@
 <html lang="zh" style="scrollbar-gutter: stable;">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>知识大脑 - {{ .Site.Title }}</title>
+  <title>大脑图谱 - {{ .Site.Title }}</title>
   <script src="https://unpkg.com/force-graph"></script>
   <style>
     :root { --bg: #fff; --text: #2c3e50; --link: #34495e; --border: #eee; --nav-link: #7f8c8d; }
@@ -14,8 +14,21 @@
     .theme-toggle { cursor: pointer; font-size: 1.2rem; line-height: 1; }
     h1 { font-size: 2.2rem; margin: 40px 0 10px; font-weight: 700; }
     
-    /* 图谱容器：去掉边框，让它像 Obsidian 一样融入背景 */
-    #graph-container { width: 100%; height: 550px; margin-top: 30px; border-radius: 12px; background: var(--bg); border: 1px solid var(--border); box-shadow: inset 0 0 20px rgba(0,0,0,0.02); overflow: hidden; }
+    /* 响应式图谱容器：针对手机端优化高度，加入细腻内阴影 */
+    #graph-container { 
+      width: 100%; 
+      height: 60vh; 
+      min-height: 400px; 
+      max-height: 550px; 
+      margin-top: 30px; 
+      border-radius: 12px; 
+      background: var(--bg); 
+      border: 1px solid var(--border); 
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.02); 
+      overflow: hidden; 
+      cursor: grab;
+    }
+    #graph-container:active { cursor: grabbing; }
     
     .tag-cloud { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 40px; list-style: none; padding: 0; }
     .tag-cloud a { color: var(--text); text-decoration: none; background: var(--border); padding: 6px 14px; border-radius: 20px; font-size: 0.9rem; transition: 0.2s; }
@@ -37,8 +50,8 @@
     <div class="theme-toggle" onclick="toggleTheme()">🌓</div>
   </header>
 
-  <h1>大脑图谱 (Graph View)</h1>
-  <p style="color: var(--nav-link); font-size: 0.9em;">完全由物理引擎驱动的数字大脑。滚轮缩放，拖拽漫游，点击节点查看档案。</p>
+  <h1>大脑图谱</h1>
+  <p style="color: var(--nav-link); font-size: 0.9em;">支持双指缩放与拖拽漫游。节点越大约核心，连线代表在日记中曾被共同提及。</p>
   
   <div id="graph-container"></div>
 
@@ -52,7 +65,6 @@
 
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
-    
     let myGraph = null;
     
     function toggleTheme() { 
@@ -62,7 +74,7 @@
     }
     if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
 
-    // --- 数据提取 ---
+    // 数据提取 (强制 urlize 对齐)
     let graphNodes = [];
     let graphLinks = [];
 
@@ -70,7 +82,7 @@
       graphNodes.push({
         id: "{{ $name | urlize }}",
         name: "{{ $name }}",
-        val: {{ .Count }}, // 文章数量决定大小
+        val: {{ .Count }}, 
         url: "/tags/{{ $name | urlize }}/"
       });
     {{ end }}
@@ -90,31 +102,10 @@
       {{ end }}
     {{ end }}
 
-    // --- Obsidian 同款渲染引擎 ---
+    // 主题色更新逻辑
     function updateGraphTheme() {
       let isDark = document.body.classList.contains('dark-mode');
-      
-      // 更新连线颜色
-      myGraph.linkColor(() => isDark ? 'rgba(150, 150, 150, 0.2)' : 'rgba(100, 100, 100, 0.2)');
-      
-      // Obsidian 同款 Canvas 自定义渲染（画小圆点 + 标签悬浮字）
-      myGraph.nodeCanvasObject((node, ctx, globalScale) => {
-        // 1. 画圈 (经典 Obsidian 紫色高亮)
-        const radius = Math.sqrt(Math.max(0, node.val || 1)) * 3;
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI, false);
-        ctx.fillStyle = isDark ? '#9a73ff' : '#6b3fa0'; // 迷幻紫
-        ctx.fill();
-
-        // 2. 画字 (放大时才显示清晰字体，缩小变淡，模拟真实呼吸感)
-        const label = node.name;
-        const fontSize = 12 / globalScale;
-        ctx.font = `${fontSize}px Sans-Serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-        ctx.fillStyle = isDark ? 'rgba(220, 221, 225, 0.8)' : 'rgba(44, 62, 80, 0.8)';
-        ctx.fillText(label, node.x, node.y + radius + (3 / globalScale));
-      });
+      myGraph.linkColor(() => isDark ? 'rgba(130, 170, 255, 0.3)' : 'rgba(52, 73, 94, 0.2)');
     }
 
     function initGraph() {
@@ -124,23 +115,58 @@
           return;
       }
       
-      // 实例化 ForceGraph
+      let isDark = document.body.classList.contains('dark-mode');
+
       myGraph = ForceGraph()(elem)
         .graphData({ nodes: graphNodes, links: graphLinks })
         .nodeId('id')
         .nodeVal('val')
-        .onNodeClick(node => window.location.href = node.url)
-        .onNodeHover(node => {
-          // 悬浮时鼠标变小手
-          elem.style.cursor = node ? 'pointer' : null;
+        // 关闭默认的 Hover 提示框，因为我们直接画了文字
+        .nodeLabel('') 
+        // 核心：自定义 Canvas 渲染 (画圆 + 画字)
+        .nodeCanvasObject((node, ctx, globalScale) => {
+          // 1. 根据文章数量计算节点大小
+          const r = Math.sqrt(Math.max(0, node.val || 1)) * 4 + 2; 
+          
+          // 2. 绘制原点
+          ctx.beginPath();
+          ctx.arc(node.x, node.y, r, 0, 2 * Math.PI, false);
+          // 颜色：白天清爽蓝，夜间科技蓝
+          ctx.fillStyle = document.body.classList.contains('dark-mode') ? '#82aaff' : '#3498db'; 
+          ctx.fill();
+
+          // 3. 绘制文字标签
+          const label = node.name;
+          // 动态计算字体大小：放大时不会过大，缩小时保证能看见基本轮廓
+          const fontSize = Math.max(12 / globalScale, 6); 
+          ctx.font = `${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'top';
+          // 文字颜色随主题变化
+          ctx.fillStyle = document.body.classList.contains('dark-mode') ? 'rgba(220, 221, 225, 0.9)' : 'rgba(44, 62, 80, 0.9)';
+          // 将文字放在圆点正下方一点点
+          ctx.fillText(label, node.x, node.y + r + (4 / globalScale));
         })
-        // 调整物理引擎参数：线段距离和排斥力
-        .d3Force('link', d3.forceLink().distance(60))
-        .d3Force('charge', d3.forceManyBody().strength(-200));
+        .linkWidth(isDark ? 1.5 : 1)
+        .onNodeClick(node => {
+          if (node.url) window.location.href = node.url;
+        })
+        .onNodeHover(node => {
+          elem.style.cursor = node ? 'pointer' : 'grab';
+        });
 
       updateGraphTheme();
 
-      // 自适应窗口大小
+      // 【重点修复】调优物理引擎的斥力和距离，防止节点挤在一起
+      myGraph.d3Force('charge').strength(-250);
+      myGraph.d3Force('link').distance(80);
+
+      // 【重点修复】默认居中适配！当引擎完成初步布局后，自动缩放并居中到视图内
+      myGraph.onEngineStop(() => {
+        myGraph.zoomToFit(600, 50); // 600ms 平滑动画，四周留白 50px
+      });
+
+      // 监听容器大小变化，比如手机横竖屏切换时自动重绘
       let resizeObserver = new ResizeObserver(() => {
         myGraph.width(elem.clientWidth);
         myGraph.height(elem.clientHeight);
@@ -148,7 +174,6 @@
       resizeObserver.observe(elem);
     }
 
-    // 初始化引擎
     setTimeout(initGraph, 50);
   </script>
 </body>
