@@ -31,7 +31,7 @@
     <div class="theme-toggle" onclick="toggleTheme()">🌓</div>
   </header>
   <h1>全站归档</h1>
-  {{ range (where .Site.RegularPages "Section" "posts").GroupByDate "2006" }}
+  {{ range (where .Site.RegularPages "Section" "posts").GroupByDate "2006" "desc" }}
     <div class="year-title">{{ .Key }}</div>
     <ul>{{ range .Pages }}<li><time>{{ .Date.Format "01-02" }}</time><a href="{{ .RelPermalink }}">{{ .Title }}</a></li>{{ end }}</ul>
   {{ end }}

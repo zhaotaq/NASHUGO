@@ -12,13 +12,29 @@
     .nav-active { color: var(--text) !important; border-bottom-color: var(--text) !important; font-weight: 500; }
     .theme-toggle { cursor: pointer; font-size: 1.2rem; }
     h1 { font-size: 2.2rem; margin: 40px 0 20px; font-weight: 700; }
+    /* 代码块 - 修复原来 --code-bg 定义了却没用的问题 */
+    pre { background: var(--code-bg); padding: 16px 20px; border-radius: 6px; overflow-x: auto; font-size: 0.875rem; line-height: 1.65; margin: 24px 0; }
+    code { background: var(--code-bg); padding: 2px 5px; border-radius: 3px; font-size: 0.875em; }
+    pre code { background: none; padding: 0; font-size: inherit; }
+    /* 代码块复制按钮 */
+    .code-wrapper { position: relative; }
+    .copy-btn { position: absolute; top: 8px; right: 8px; padding: 2px 8px; font-size: 11px; cursor: pointer; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 3px; opacity: 0.45; transition: opacity 0.2s; }
+    .copy-btn:hover, .copy-btn.copied { opacity: 1; }
+    /* 阅读进度条 */
+    #reading-progress { position: fixed; top: 0; left: 0; height: 2px; width: 0%; background: var(--text); z-index: 9999; transition: width 0.12s linear; }
+    /* 回到顶部 */
+    #back-to-top { position: fixed; bottom: 32px; right: 28px; width: 36px; height: 36px; border-radius: 50%; background: var(--text); color: var(--bg); border: none; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; z-index: 999; line-height: 1; }
+    #back-to-top.visible { opacity: 0.6; }
+    #back-to-top:hover { opacity: 1; }
+    /* TOC */
     #toc { background: var(--toc-bg); padding: 15px; border-radius: 8px; margin-bottom: 30px; font-size: 0.9rem; border: 1px solid var(--border); }
     @media (min-width: 1250px) { #toc { position: fixed; left: calc(50% + 420px); top: 100px; width: 240px; border: none; background: transparent; } }
-    footer { margin-top: 80px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center; color: var(--nav-link); font-size: 0.8rem; }
     .tag-link { background: var(--border); padding: 2px 8px; border-radius: 4px; font-size: 0.85em; margin-right: 8px; color: var(--nav-link); text-decoration: none; }
+    footer { margin-top: 80px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center; color: var(--nav-link); font-size: 0.8rem; }
   </style>
 </head>
 <body>
+  <div id="reading-progress"></div>
   <header>
     <nav>
       <a href="/" {{ if .IsHome }}class="nav-active"{{ end }}>首页</a>
@@ -32,17 +48,47 @@
   <article>
     <h1>{{ .Title }}</h1>
     {{ if eq .Section "posts" }}
-      <p style="color:var(--nav-link); font-size: 0.9em; margin-bottom: 20px;">刊于 {{ .Date.Format "2006-01-02" }}</p>
+      <p style="color:var(--nav-link); font-size: 0.9em; margin-bottom: 8px;">
+        刊于 {{ .Date.Format "2006-01-02" }} &nbsp;·&nbsp; 约 {{ .ReadingTime }} 分钟阅读
+      </p>
       {{ with .GetTerms "tags" }}<p style="margin-bottom: 30px;">{{ range . }}<a href="{{ .RelPermalink }}" class="tag-link">#{{ .Title }}</a>{{ end }}</p>{{ end }}
       {{ if .TableOfContents }}<aside id="toc"><span style="font-weight:bold; display:block; margin-bottom:10px;">目录提纲</span>{{ .TableOfContents }}</aside>{{ end }}
     {{ end }}
     <div class="content">{{ .Content }}</div>
   </article>
   <footer><p>© <span id="year"></span> {{ .Site.Title }}</p></footer>
+  <button id="back-to-top" title="回到顶部">↑</button>
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
     function toggleTheme() { document.body.classList.toggle('dark-mode'); localStorage.setItem('theme', document.body.classList.contains('dark-mode')?'dark':'light'); }
     if (localStorage.getItem('theme')==='dark') document.body.classList.add('dark-mode');
+
+    // 阅读进度条 + 回顶按钮
+    const bar = document.getElementById('reading-progress');
+    const btn = document.getElementById('back-to-top');
+    window.addEventListener('scroll', () => {
+      const s = window.scrollY, t = document.documentElement.scrollHeight - window.innerHeight;
+      bar.style.width = (t > 0 ? (s / t * 100) : 0) + '%';
+      btn.classList.toggle('visible', s > 300);
+    });
+    btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+    // 代码块复制按钮
+    document.querySelectorAll('pre').forEach(pre => {
+      const w = document.createElement('div'); w.className = 'code-wrapper';
+      pre.parentNode.insertBefore(w, pre); w.appendChild(pre);
+      const b = document.createElement('button'); b.className = 'copy-btn'; b.textContent = '复制'; w.appendChild(b);
+      b.addEventListener('click', () => navigator.clipboard.writeText(pre.innerText).then(() => {
+        b.textContent = '✓ 已复制'; b.classList.add('copied');
+        setTimeout(() => { b.textContent = '复制'; b.classList.remove('copied'); }, 1800);
+      }));
+    });
+
+    // 外链自动新窗口
+    document.querySelectorAll('.content a[href^="http"]').forEach(a => {
+      a.setAttribute('target', '_blank');
+      a.setAttribute('rel', 'noopener noreferrer');
+    });
   </script>
 </body>
 </html>
