@@ -34,7 +34,10 @@
 - **baseURL**：已设为 `/`，**不要填入任何真实域名或 IP 地址**。
 - **pre-commit 安全钩子**：已安装在 `.git/hooks/pre-commit`，自动拦截内网 IP、Tailscale 域名、密码、token 等敏感信息，**不要删除或修改这个钩子**。
 
-## 3. 网络架构 (只读了解，不要修改)公网用户 → Tailscale Funnel(:8443) → localhost:1313 → my_hugo 容器- 博客通过 Tailscale Funnel 对外提供访问，有 HTTPS，安全。
+## 3. 网络架构 (只读了解，不要修改)
+公网用户 → Tailscale Funnel(:8443) → localhost:1313 → my_hugo 容器
+
+- 博客通过 Tailscale Funnel 对外提供访问，有 HTTPS，安全。
 - 容器端口绑定为 `127.0.0.1:1313`，内网其他设备无法直接访问。
 - **不要修改端口绑定方式**，不要改回 `0.0.0.0:1313`。
 
