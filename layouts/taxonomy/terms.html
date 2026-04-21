@@ -18,9 +18,11 @@
     .tag-cloud { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 40px; list-style: none; padding: 0; }
     .tag-cloud a { color: var(--text); text-decoration: none; background: var(--border); padding: 6px 14px; border-radius: 20px; font-size: 0.9rem; transition: 0.2s; }
     footer { margin-top: 80px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center; color: var(--nav-link); font-size: 0.8rem; }
+    @media (max-width: 500px) { nav { gap: 12px; } nav a { font-size: 14px; } h1 { font-size: 1.8rem; } }
   </style>
 </head>
 <body>
+  <script></script>
   <header>
     <nav>
       <a href="/" {{ if eq .RelPermalink "/" }}class="nav-active"{{ end }}>首页</a>

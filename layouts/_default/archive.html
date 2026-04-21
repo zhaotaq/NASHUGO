@@ -18,9 +18,11 @@
     time { color: var(--nav-link); font-family: monospace; width: 110px; flex-shrink: 0; font-size: 14px; }
     .post-link { color: var(--link); text-decoration: none; font-size: 16px; }
     footer { margin-top: 80px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center; color: var(--nav-link); font-size: 0.8rem; }
+    @media (max-width: 500px) { nav { gap: 12px; } nav a { font-size: 14px; } h1 { font-size: 1.8rem; } }
   </style>
 </head>
 <body>
+  <script></script>
   <header>
     <nav>
       <a href="/" {{ if eq .RelPermalink "/" }}class="nav-active"{{ end }}>首页</a>
@@ -40,7 +42,7 @@
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
     function toggleTheme() { document.body.classList.toggle('dark-mode'); localStorage.setItem('theme', document.body.classList.contains('dark-mode')?'dark':'light'); }
-    if (localStorage.getItem('theme')==='dark') document.body.classList.add('dark-mode');
+    
   </script>
 </body>
 </html>
