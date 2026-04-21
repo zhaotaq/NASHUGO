@@ -8,10 +8,11 @@
     :root { --bg: #fff; --text: #2c3e50; --link: #34495e; --border: #eee; --nav-link: #7f8c8d; }
     .dark-mode { --bg: #121212; --text: #dcdde1; --link: #82aaff; --border: #2f3640; --nav-link: #95a5a6; }
     body { background: var(--bg); color: var(--text); max-width: 780px; margin: 0 auto; padding: 0 25px 60px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.8; transition: background-color 0.3s; }
-    header { display: flex; justify-content: space-between; align-items: center; padding: 30px 0; border-bottom: 1px solid var(--border); margin-bottom: 40px; height: 32px; }
-    nav a { margin-right: 25px; color: var(--nav-link); text-decoration: none; font-size: 0.95rem; border-bottom: 2px solid transparent; padding-bottom: 4px; transition: 0.2s; }
-    .nav-active { color: var(--text) !important; border-bottom-color: var(--text) !important; font-weight: 500; }
-    .theme-toggle { cursor: pointer; font-size: 1.2rem; line-height: 1; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 30px 0; border-bottom: 1px solid var(--border); margin-bottom: 40px; height: 32px; box-sizing: content-box; }
+    nav { display: flex; align-items: center; gap: 28px; }
+    nav a { color: var(--nav-link); text-decoration: none; font-size: 15px; font-weight: 500; border-bottom: 2px solid transparent; padding-bottom: 4px; transition: 0.2s; letter-spacing: 0.5px; }
+    .nav-active { color: var(--text) !important; border-bottom-color: var(--text) !important; }
+    .theme-toggle { cursor: pointer; font-size: 1.2rem; line-height: 1; user-select: none; }
     h1 { font-size: 2.2rem; margin: 40px 0 10px; font-weight: 700; }
     #graph-container { width: 100%; height: 60vh; min-height: 400px; max-height: 550px; margin-top: 30px; border-radius: 12px; background: var(--bg); border: 1px solid var(--border); box-shadow: inset 0 0 30px rgba(0,0,0,0.03); overflow: hidden; }
     .tag-cloud { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 40px; list-style: none; padding: 0; }
@@ -22,11 +23,10 @@
 <body>
   <header>
     <nav>
-      <a href="/">首页</a>
-      
-      <a href="/tags/" class="nav-active">标签</a>
-      <a href="/tools/">工具</a>
-      <a href="/about/">关于</a>
+      <a href="/" {{ if eq .RelPermalink "/" }}class="nav-active"{{ end }}>首页</a>
+      <a href="/tags/" {{ if in .RelPermalink "/tags/" }}class="nav-active"{{ end }}>标签</a>
+      <a href="/tools/" {{ if in .RelPermalink "/tools/" }}class="nav-active"{{ end }}>工具</a>
+      <a href="/about/" {{ if in .RelPermalink "/about/" }}class="nav-active"{{ end }}>关于</a>
     </nav>
     <div class="theme-toggle" onclick="toggleTheme()">🌓</div>
   </header>
@@ -59,7 +59,6 @@
     const nodesMap = {};
     let maxVal = 1;
 
-    // 安全加载数据
     {{ range .Data.Terms.ByCount }}
       (function() {
         const id = {{ .Page.Title | urlize | jsonify }};
@@ -93,13 +92,10 @@
     {{ end }}
 
     function getNodeColor(node, isDark) {
-      if (!node.isConnected) return isDark ? '#4a5940' : '#bdc3c7'; // 灰色/墨绿
+      if (!node.isConnected) return isDark ? '#4a5940' : '#bdc3c7'; 
       const activity = Math.min(1, Math.log2(node.val + 1) / Math.log2(maxVal + 2));
-      if (isDark) {
-        return activity > 0.6 ? '#9a73ff' : '#00d2d3'; 
-      } else {
-        return activity > 0.6 ? '#6b3fa0' : '#3498db'; 
-      }
+      if (isDark) { return activity > 0.6 ? '#9a73ff' : '#00d2d3'; } 
+      else { return activity > 0.6 ? '#6b3fa0' : '#3498db'; }
     }
 
     function init() {
@@ -133,16 +129,11 @@
         .onNodeClick(node => { if(node.url) window.location.href = node.url; })
         .onNodeHover(node => container.style.cursor = node ? 'pointer' : 'grab');
 
-      // 【核心解法】大幅度削弱排斥力，让节点不会在第一秒飞出屏幕外
       myGraph.d3Force('charge').strength(-80); 
       myGraph.d3Force('link').distance(60);
 
-      // 【安全居中】等节点自然碰撞冷却后，优雅对焦
-      myGraph.onEngineStop(() => {
-        myGraph.zoomToFit(600, 50);
-      });
+      myGraph.onEngineStop(() => { myGraph.zoomToFit(600, 50); });
 
-      // 容器大小变化时自动居中（适配手机旋转）
       const ro = new ResizeObserver(() => {
         myGraph.width(container.clientWidth);
         myGraph.height(container.clientHeight);
