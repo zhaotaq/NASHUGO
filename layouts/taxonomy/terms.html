@@ -10,7 +10,7 @@
     body { background: var(--bg); color: var(--text); max-width: 780px; margin: 0 auto; padding: 0 25px 60px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.8; transition: background-color 0.3s; }
     header { display: flex; justify-content: space-between; align-items: center; padding: 30px 0; border-bottom: 1px solid var(--border); margin-bottom: 40px; height: 32px; box-sizing: content-box; }
     nav { display: flex; align-items: center; gap: 28px; }
-    nav a { color: var(--nav-link); text-decoration: none; font-size: 15px; font-weight: 500; border-bottom: 2px solid transparent; padding-bottom: 4px; transition: 0.2s; letter-spacing: 0.5px; }
+    nav a { color: var(--nav-link); text-decoration: none; font-size: 15px; border-bottom: 2px solid transparent; padding-bottom: 4px; transition: 0.2s; letter-spacing: 0.5px; }
     .nav-active { color: var(--text) !important; border-bottom-color: var(--text) !important; }
     .theme-toggle { cursor: pointer; font-size: 1.2rem; line-height: 1; user-select: none; }
     h1 { font-size: 2.2rem; margin: 40px 0 10px; font-weight: 700; }
@@ -26,6 +26,7 @@
   <header>
     <nav>
       <a href="/" {{ if eq .RelPermalink "/" }}class="nav-active"{{ end }}>首页</a>
+      <a href="/archive/" {{ if eq .RelPermalink "/archive/" }}class="nav-active"{{ end }}>归档</a>
       <a href="/tags/" {{ if in .RelPermalink "/tags/" }}class="nav-active"{{ end }}>标签</a>
       <a href="/tools/" {{ if in .RelPermalink "/tools/" }}class="nav-active"{{ end }}>工具</a>
       <a href="/about/" {{ if in .RelPermalink "/about/" }}class="nav-active"{{ end }}>关于</a>
