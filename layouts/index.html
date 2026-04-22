@@ -29,7 +29,6 @@
   <header>
     <nav>
       <a href="/" {{ if eq .RelPermalink "/" }}class="nav-active"{{ end }}>首页</a>
-      <a href="/archive/" {{ if eq .RelPermalink "/archive/" }}class="nav-active"{{ end }}>归档</a>
       <a href="/tags/" {{ if in .RelPermalink "/tags/" }}class="nav-active"{{ end }}>标签</a>
       <a href="/tools/" {{ if in .RelPermalink "/tools/" }}class="nav-active"{{ end }}>工具</a>
       <a href="/about/" {{ if in .RelPermalink "/about/" }}class="nav-active"{{ end }}>关于</a>
