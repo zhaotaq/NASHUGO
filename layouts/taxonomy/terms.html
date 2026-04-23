@@ -1,40 +1,19 @@
-<!DOCTYPE html>
-<html lang="zh" style="scrollbar-gutter: stable;">
-<head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>标签与图谱 - {{ .Site.Title }}</title>
+{{ define "title" }}{{ .Title }}与图谱 - {{ .Site.Title }}{{ end }}
+
+{{ define "extra_head" }}
   <script src="https://unpkg.com/force-graph"></script>
-  <style>
-    :root { --bg: #fff; --text: #2c3e50; --link: #34495e; --border: #eee; --nav-link: #7f8c8d; }
-    .dark-mode { --bg: #121212; --text: #dcdde1; --link: #82aaff; --border: #2f3640; --nav-link: #95a5a6; }
-    body { background: var(--bg); color: var(--text); max-width: 780px; margin: 0 auto; padding: 0 25px 60px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.8; transition: background-color 0.3s; }
-    header { display: flex; justify-content: space-between; align-items: center; padding: 30px 0; border-bottom: 1px solid var(--border); margin-bottom: 40px; height: 32px; box-sizing: content-box; }
-    nav { display: flex; align-items: center; gap: 2px; }
-    nav a { color: var(--nav-link); text-decoration: none; font-size: 14px; font-weight: 400; padding: 5px 12px; border-radius: 20px; transition: background 0.15s, color 0.15s; -webkit-font-smoothing: antialiased; outline: none; user-select: none; -webkit-tap-highlight-color: transparent; }
-    nav a:hover { background: var(--border); color: var(--text); }
-    .nav-active { background: var(--text) !important; color: var(--bg) !important; }
-    .theme-toggle { cursor: pointer; font-size: 1.1rem; user-select: none; padding: 5px 8px; border-radius: 20px; transition: background 0.15s; }
-    .theme-toggle:hover { background: var(--border); }
-    h1 { font-size: 2.2rem; margin: 40px 0 10px; font-weight: 700; }
-    #graph-container { width: 100%; height: 60vh; min-height: 400px; max-height: 550px; margin-top: 30px; border-radius: 12px; background: var(--bg); border: 1px solid var(--border); box-shadow: inset 0 0 30px rgba(0,0,0,0.03); overflow: hidden; }
-    .tag-cloud { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 40px; list-style: none; padding: 0; }
-    .tag-cloud a { color: var(--text); text-decoration: none; background: var(--border); padding: 6px 14px; border-radius: 20px; font-size: 0.9rem; transition: 0.2s; }
-    footer { margin-top: 80px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center; color: var(--nav-link); font-size: 0.8rem; }
-  </style>
-</head>
-<body>
+{{ end }}
 
-  <header>
-    <nav>
-      <a href="/" {{ if eq .RelPermalink "/" }}class="nav-active"{{ end }}>首页</a>
-      <a href="/tags/" {{ if in .RelPermalink "/tags/" }}class="nav-active"{{ end }}>标签</a>
-      <a href="/tools/" {{ if in .RelPermalink "/tools/" }}class="nav-active"{{ end }}>工具</a>
-      <a href="/about/" {{ if in .RelPermalink "/about/" }}class="nav-active"{{ end }}>关于</a>
-    </nav>
-    <div class="theme-toggle" onclick="toggleTheme()">🌓</div>
-  </header>
+{{ define "extra_css" }}
+<style>
+  #graph-container { width: 100%; height: 60vh; min-height: 400px; max-height: 550px; margin-top: 30px; border-radius: 12px; background: var(--bg); border: 1px solid var(--border); box-shadow: inset 0 0 30px rgba(0,0,0,0.03); overflow: hidden; }
+  .tag-cloud { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 40px; list-style: none; padding: 0; }
+  .tag-cloud a { color: var(--text); text-decoration: none; background: var(--border); padding: 6px 14px; border-radius: 20px; font-size: 0.9rem; transition: 0.2s; }
+</style>
+{{ end }}
 
-  <h1>标签与图谱</h1>
+{{ define "main" }}
+  <h1>{{ .Title }}与图谱</h1>
   <p style="color: var(--nav-link); font-size: 0.9em;">知识的大脑漫游。深色大圆点为核心领域，彩色小圆点为生长分支，灰色为独立节点。</p>
   
   <div id="graph-container"></div>
@@ -44,19 +23,11 @@
     <li><a href="{{ .Page.RelPermalink }}">#{{ .Page.Title }} <span style="opacity:0.5; font-size:0.8em;">{{ .Count }}</span></a></li>
     {{ end }}
   </ul>
+{{ end }}
 
-  <footer><p>© <span id="year"></span> {{ .Site.Title }}</p></footer>
-
+{{ define "extra_js" }}
   <script>
-    document.getElementById('year').textContent = new Date().getFullYear();
     let myGraph = null;
-
-    function toggleTheme() { 
-      document.body.classList.toggle('dark-mode'); 
-      localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light'); 
-      if (myGraph) myGraph.refresh(); 
-    }
-    if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
 
     const graphData = { nodes: [], links: [] };
     const nodesMap = {};
@@ -64,7 +35,6 @@
 
     {{ range .Data.Terms.ByCount }}
       (function() {
-        // 【核心修复】：去掉 jsonify，直接使用纯净的字符串变量传递
         const id = "{{ .Page.Title | urlize }}";
         const name = "{{ .Page.Title }}";
         const val = {{ .Count }};
@@ -146,7 +116,15 @@
       ro.observe(container);
     }
 
+    window.addEventListener('theme-changed', (e) => {
+      if (myGraph) {
+        try { 
+          myGraph.refresh(); 
+          myGraph.linkColor(myGraph.linkColor()); 
+        } catch(e) {}
+      }
+    });
+
     setTimeout(init, 100);
   </script>
-</body>
-</html>
+{{ end }}

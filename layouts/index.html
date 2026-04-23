@@ -1,52 +1,173 @@
-<!DOCTYPE html>
-<html lang="zh" style="scrollbar-gutter: stable;">
-<head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ .Site.Title }}</title>
-  <style>
-    :root { --bg: #fff; --text: #2c3e50; --link: #34495e; --border: #eee; --nav-link: #7f8c8d; }
-    .dark-mode { --bg: #121212; --text: #dcdde1; --link: #82aaff; --border: #2f3640; --nav-link: #95a5a6; }
-    body { background: var(--bg); color: var(--text); max-width: 780px; margin: 0 auto; padding: 0 25px 60px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.8; transition: background-color 0.3s; }
-    header { display: flex; justify-content: space-between; align-items: center; padding: 30px 0; border-bottom: 1px solid var(--border); margin-bottom: 40px; height: 32px; box-sizing: content-box; }
-    nav { display: flex; align-items: center; gap: 2px; }
-    nav a { color: var(--nav-link); text-decoration: none; font-size: 14px; font-weight: 400; padding: 5px 12px; border-radius: 20px; transition: background 0.15s, color 0.15s; -webkit-font-smoothing: antialiased; outline: none; user-select: none; -webkit-tap-highlight-color: transparent; }
-    nav a:hover { background: var(--border); color: var(--text); }
-    .nav-active { background: var(--text) !important; color: var(--bg) !important; }
-    .theme-toggle { cursor: pointer; font-size: 1.1rem; user-select: none; padding: 5px 8px; border-radius: 20px; transition: background 0.15s; }
-    .theme-toggle:hover { background: var(--border); }
-    h1 { font-size: 2.2rem; margin: 40px 0 20px; font-weight: 700; }
-    ul { list-style: none; padding: 0; margin-top: 30px; }
-    li { margin-bottom: 18px; display: flex; align-items: baseline; }
-    time { color: var(--nav-link); font-family: monospace; width: 110px; flex-shrink: 0; font-size: 14px; }
-    .post-link { color: var(--link); text-decoration: none; font-size: 16px; }
-    .view-all { display: inline-block; margin-top: 30px; font-size: 14px; color: var(--nav-link); text-decoration: none; border-bottom: 1px solid var(--border); }
-    footer { margin-top: 80px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center; color: var(--nav-link); font-size: 0.8rem; }
-  </style>
-</head>
-<body>
+{{ define "extra_css" }}
+<style>
+  /* Life OS v2.0 Dashboard - Mission Control & Chronos */
+  .dashboard { margin: 40px 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; }
+  .panel { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: transform 0.2s; }
+  .panel:hover { transform: translateY(-2px); border-color: var(--nav-link); }
+  .panel-header { font-size: 0.85rem; font-weight: 700; color: var(--nav-link); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+  
+  /* Mission Matrix */
+  .mission-list { display: flex; flex-direction: column; gap: 10px; }
+  .mission-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--border); border-radius: 6px; font-size: 0.9rem; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+  .status-active { background: #3498db; box-shadow: 0 0 8px #3498db; }
+  .status-resolved { background: #27ae60; opacity: 0.6; }
 
-  <header>
-    <nav>
-      <a href="/" {{ if eq .RelPermalink "/" }}class="nav-active"{{ end }}>首页</a>
-      <a href="/tags/" {{ if in .RelPermalink "/tags/" }}class="nav-active"{{ end }}>标签</a>
-      <a href="/tools/" {{ if in .RelPermalink "/tools/" }}class="nav-active"{{ end }}>工具</a>
-      <a href="/about/" {{ if in .RelPermalink "/about/" }}class="nav-active"{{ end }}>关于</a>
-    </nav>
-    <div class="theme-toggle" onclick="toggleTheme()">🌓</div>
-  </header>
+  /* Chronos Radar */
+  .chronos-grid { display: flex; flex-direction: column; gap: 8px; }
+  .event-card { border-left: 3px solid #e67e22; padding: 8px 12px; background: rgba(230, 126, 34, 0.05); border-radius: 0 6px 6px 0; display: flex; justify-content: space-between; align-items: baseline; }
+  .event-name { font-size: 0.9rem; font-weight: 600; }
+  .event-date { font-size: 0.75rem; color: var(--nav-link); font-family: monospace; }
+
+  /* Fiscus - Wealth Waterline */
+  .fiscus-display { display: flex; align-items: baseline; gap: 10px; }
+  .fiscus-flow { font-family: monospace; font-size: 1.4rem; font-weight: 700; }
+  .flow-neg { color: #e67e22; }
+  .flow-pos { color: #27ae60; }
+  .fiscus-status { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: var(--border); color: var(--nav-link); text-transform: uppercase; }
+
+  /* Status Alert */
+  .status-alert { grid-column: 1 / -1; padding: 12px 20px; border-radius: 10px; background: #fff5f5; border: 1px solid #feb2b2; color: #c53030; font-size: 0.9rem; display: flex; align-items: center; gap: 10px; }
+  .dark-mode .status-alert { background: #2d1212; border-color: #742a2a; color: #feb2b2; }
+
+  /* Common Vitals */
+  .vital-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+  .vital-card { text-align: center; padding: 10px; background: var(--border); border-radius: 8px; }
+  .vital-value { font-size: 1.5rem; font-weight: 800; display: block; line-height: 1; margin-bottom: 5px; }
+  .energy-high { color: #27ae60; }
+  .energy-low { color: #e74c3c; font-weight: bold; animation: blink 2s infinite; }
+
+  @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+</style>
+{{ end }}
+
+{{ define "main" }}
   <h1>{{ .Site.Title }}</h1>
+
+  <div class="dashboard">
+    {{ $all_posts := (where .Site.RegularPages "Section" "posts") }}
+    {{ $recent := (first 7 $all_posts.ByDate.Reverse) }}
+    {{ $monthly := (where $all_posts "Date" "gt" (now.AddDate 0 -1 0)) }}
+    
+    {{/* 1. 生命体征聚合 */}}
+    {{ $avg_energy := 0 }}{{ $count := 0 }}{{ $health_issues := slice }}
+    {{ $ignore_list := slice "正常" "良好" "无" "OK" "ok" "normal" "良好 " "正常 " "止痒膏" "药" "药膏" "服用" }}
+    {{ range (first 10 $all_posts.ByDate.Reverse) }}
+      {{ $h := slice }}
+      {{ if .Params.soma }}{{ $h = .Params.soma.health }}{{ else if .Params.health }}{{ $h = .Params.health }}{{ end }}
+      {{ if .Params.soma }}{{ $avg_energy = add $avg_energy (index .Params.soma "energy" | default 3) }}{{ $count = add $count 1 }}{{ else if .Params.energy }}{{ $avg_energy = add $avg_energy .Params.energy }}{{ $count = add $count 1 }}{{ end }}
+      {{ range $h }}{{ if not (in $ignore_list .) }}{{ $health_issues = $health_issues | append . }}{{ end }}{{ end }}
+    {{ end }}
+    {{ if gt $count 0 }}{{ $avg_energy = div $avg_energy $count }}{{ end }}
+
+    {{ if gt (len $health_issues) 0 }}
+    <div class="status-alert">
+      <span>📡 <b>生命体征告警：</b> 监测到近期异常项 ({{ delimit (first 3 (uniq $health_issues)) " / " }})</span>
+    </div>
+    {{ end }}
+
+    <div class="panel">
+      <div class="panel-header">📟 生物遥测 (近期均值)</div>
+      <div class="vital-grid">
+        <div class="vital-card">
+          <span class="vital-value {{ if lt $avg_energy 3 }}energy-low{{ else }}energy-high{{ end }}">{{ printf "%.1f" (float $avg_energy) }}</span>
+          <span class="vital-label">精力指数</span>
+        </div>
+        <div class="vital-card">
+          {{ $latest := index $recent 0 }}
+          <span class="vital-value" style="font-size: 1.1rem;">{{ if $latest.Params.psyche }}{{ $latest.Params.psyche.mood }}{{ else }}未知{{ end }}</span>
+          <span class="vital-label">最新心态</span>
+        </div>
+      </div>
+    </div>
+
+    {{/* 2. 任务控制中心 (Opus Matrix - 最新状态优先) */}}
+    {{ $missions := dict }}
+    {{ $mission_names := slice }}
+    {{ range $all_posts.ByDate }}
+      {{ if .Params.opus.missions }}
+        {{ range .Params.opus.missions }}
+          {{ $missions = merge $missions (dict .name .status) }}
+          {{ if not (in $mission_names .name) }}
+            {{ $mission_names = $mission_names | append .name }}
+          {{ end }}
+        {{ end }}
+      {{ end }}
+    {{ end }}
+
+    <div class="panel">
+      <div class="panel-header">🕹️ 任务控制中心 (Missions)</div>
+      <div class="mission-list">
+        {{ $active_count := 0 }}
+        {{ range $mission_names }}
+          {{ $status := index $missions . }}
+          {{ if eq $status "active" }}
+            <div class="mission-item">
+              <span><span class="status-dot status-active"></span>{{ . }}</span>
+              <span style="font-size: 0.7rem; color: var(--nav-link);">进行中</span>
+            </div>
+            {{ $active_count = add $active_count 1 }}
+          {{ end }}
+        {{ end }}
+        {{ if eq $active_count 0 }}<span class="vital-label">无活跃攻坚任务</span>{{ end }}
+      </div>
+    </div>
+
+    {{/* 3. 日程雷达 (Chronos Radar) */}}
+    <div class="panel">
+      <div class="panel-header">📡 日程雷达 (Upcoming)</div>
+      <div class="chronos-grid">
+        {{ $upcoming := slice }}
+        {{ $today := now.Format "2006-01-02" }}
+        {{ range (first 20 $all_posts.ByDate.Reverse) }}
+          {{ if .Params.chronos }}
+            {{ range .Params.chronos }}
+              {{ if ge .date $today }}
+                {{ $upcoming = $upcoming | append . }}
+              {{ end }}
+            {{ end }}
+          {{ end }}
+        {{ end }}
+        
+        {{ range (first 5 (sort $upcoming "date" "asc")) }}
+          <div class="event-card">
+            <span class="event-name">{{ .event }}</span>
+            <span class="event-date">{{ .date }}</span>
+          </div>
+        {{ else }}
+          <span class="vital-label">未来 7 天无预定事件</span>
+        {{ end }}
+      </div>
+    </div>
+
+    {{/* 4. 财富水位 */}}
+    <div class="panel">
+      <div class="panel-header">💰 财富水位 (30D Flow)</div>
+      {{ $total_flow := 0.0 }}
+      {{ $f_status := "steady" }}
+      {{ range $monthly }}
+        {{ if .Params.fiscus }}{{ $total_flow = add $total_flow (index .Params.fiscus "flow" | default 0.0) }}{{ $f_status = (index .Params.fiscus "status" | default "steady") }}{{ end }}
+      {{ end }}
+      <div class="fiscus-display">
+        <span class="fiscus-flow {{ if lt $total_flow 0.0 }}flow-neg{{ else if gt $total_flow 0.0 }}flow-pos{{ end }}">
+          {{ if gt $total_flow 0.0 }}+{{ end }}{{ printf "%.2f" $total_flow }}
+        </span>
+        <span class="fiscus-status">{{ $f_status }}</span>
+      </div>
+    </div>
+
+  </div>
+
+  <h2>最近流水</h2>
   <ul>
-    {{ range (first 10 (where .Site.RegularPages "Section" "posts").ByDate.Reverse) }}
-    <li><time>{{ .Date.Format "2006-01-02" }}</time><a class="post-link" href="{{ .RelPermalink }}">{{ .Title }}</a></li>
+    {{ range $recent }}
+    <li>
+      <time>{{ .Date.Format "2006-01-02" }}</time>
+      <a class="post-link" href="{{ .RelPermalink }}">{{ .Title }}</a>
+      {{ $energy := 3 }}
+      {{ if .Params.soma }}{{ $energy = (index .Params.soma "energy" | default 3) }}{{ else if .Params.energy }}{{ $energy = .Params.energy }}{{ end }}
+      <div class="energy-bar-mini"><div class="energy-fill-mini" style="width: {{ mul $energy 20 }}%;"></div></div>
+    </li>
     {{ end }}
   </ul>
-  <a href="/archive/" class="view-all">查看全部文章...</a>
-  <footer><p>© <span id="year"></span> {{ .Site.Title }}</p></footer>
-  <script>
-    document.getElementById('year').textContent = new Date().getFullYear();
-    function toggleTheme() { document.body.classList.toggle('dark-mode'); localStorage.setItem('theme', document.body.classList.contains('dark-mode')?'dark':'light'); }
-    if (localStorage.getItem('theme')==='dark') document.body.classList.add('dark-mode');
-    
-  </script>
-</body>
-</html>
+{{ end }}

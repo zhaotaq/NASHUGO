@@ -1,21 +1,11 @@
-<!DOCTYPE html>
-<html lang="zh" style="scrollbar-gutter: stable; scroll-behavior: smooth;">
-<head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ .Title }} - {{ .Site.Title }}</title>
+{{ define "extra_head" }}
   <meta name="description" content="{{ with .Description }}{{ . }}{{ else }}{{ .Summary | truncate 100 }}{{ end }}">
+{{ end }}
+
+{{ define "extra_css" }}
   <style>
-    :root { --bg: #fff; --text: #2c3e50; --link: #34495e; --border: #eee; --nav-link: #7f8c8d; --code-bg: #f8f9fa; --toc-bg: #fafafa; }
-    .dark-mode { --bg: #121212; --text: #dcdde1; --link: #82aaff; --border: #2f3640; --nav-link: #95a5a6; --code-bg: #1e1e1e; --toc-bg: #1a1a1a; }
-    body { background: var(--bg); color: var(--text); max-width: 780px; margin: 0 auto; padding: 0 25px 60px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.8; transition: background-color 0.3s; }
-    header { display: flex; justify-content: space-between; align-items: center; padding: 30px 0; border-bottom: 1px solid var(--border); margin-bottom: 40px; height: 32px; box-sizing: content-box; }
-    nav { display: flex; align-items: center; gap: 2px; }
-    nav a { color: var(--nav-link); text-decoration: none; font-size: 14px; font-weight: 400; padding: 5px 12px; border-radius: 20px; transition: background 0.15s, color 0.15s; -webkit-font-smoothing: antialiased; outline: none; user-select: none; -webkit-tap-highlight-color: transparent; }
-    nav a:hover { background: var(--border); color: var(--text); }
-    .nav-active { background: var(--text) !important; color: var(--bg) !important; }
-    .theme-toggle { cursor: pointer; font-size: 1.1rem; user-select: none; padding: 5px 8px; border-radius: 20px; transition: background 0.15s; }
-    .theme-toggle:hover { background: var(--border); }
-    h1 { font-size: 2.2rem; margin: 40px 0 20px; font-weight: 700; }
+    :root { --code-bg: #f8f9fa; --toc-bg: #fafafa; }
+    .dark-mode { --code-bg: #1e1e1e; --toc-bg: #1a1a1a; }
     pre { background: var(--code-bg); padding: 16px 20px; border-radius: 6px; overflow-x: auto; font-size: 0.875rem; line-height: 1.65; margin: 24px 0; }
     code { background: var(--code-bg); padding: 2px 5px; border-radius: 3px; font-size: 0.875em; }
     pre code { background: none; padding: 0; }
@@ -34,6 +24,14 @@
     #toc a:hover { color: var(--text); }
     @media (min-width: 1250px) { #toc { position: fixed; left: calc(50% + 420px); top: 100px; width: 240px; border: none; background: transparent; } }
     .tag-link { background: var(--border); padding: 2px 8px; border-radius: 4px; font-size: 0.85em; margin-right: 8px; color: var(--nav-link); text-decoration: none; }
+    
+    /* Digital Brain Metadata - Compact Status Bar */
+    .status-bar { display: flex; flex-wrap: wrap; gap: 12px; margin: 15px 0 30px; padding: 10px 15px; background: var(--toc-bg); border-radius: 8px; border: 1px solid var(--border); font-size: 0.85rem; color: var(--nav-link); line-height: 1; align-items: center; }
+    .status-item { display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+    .status-item:not(:last-child)::after { content: "·"; margin-left: 12px; opacity: 0.5; }
+    .status-value { color: var(--text); font-weight: 400; }
+    .status-icon { filter: grayscale(0.2); }
+
     .content h2 { font-size: 1.5rem; font-weight: 700; margin: 48px 0 16px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
     .content h3 { font-size: 1.2rem; font-weight: 600; margin: 36px 0 12px; }
     .content h4 { font-size: 1rem; font-weight: 600; margin: 24px 0 8px; color: var(--nav-link); }
@@ -48,58 +46,103 @@
     .content ul, .content ol { padding-left: 24px; margin: 0 0 20px; }
     .content li { margin-bottom: 6px; }
     .content a { color: var(--link); text-decoration: underline; text-underline-offset: 3px; }
-    footer { margin-top: 80px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center; color: var(--nav-link); font-size: 0.8rem; }
+    
+    .medium-zoom-overlay { z-index: 10000; }
+    .medium-zoom-image--opened { z-index: 10001; cursor: zoom-out; }
+    .content img { cursor: zoom-in; transition: opacity 0.3s; }
+    .content img:hover { opacity: 0.9; }
+
+    @media (max-width: 600px) {
+      .status-bar { flex-direction: column; align-items: flex-start; gap: 8px; padding: 12px; }
+      .status-item:not(:last-child)::after { display: none; }
+      .content h2 { font-size: 1.35rem; margin: 32px 0 12px; }
+      .content h3 { font-size: 1.15rem; margin: 24px 0 10px; }
+      .content h4 { font-size: 1rem; margin: 20px 0 8px; }
+    }
   </style>
-</head>
-<body>
+{{ end }}
+
+{{ define "progress" }}
   <div id="reading-progress"></div>
-  <header>
-    <nav>
-      <a href="/" {{ if .IsHome }}class="nav-active"{{ end }}>首页</a>
-      <a href="/tags/" {{ if in .RelPermalink "/tags/" }}class="nav-active"{{ end }}>标签</a>
-      <a href="/tools/" {{ if in .RelPermalink "/tools/" }}class="nav-active"{{ end }}>工具</a>
-      <a href="/about/" {{ if in .RelPermalink "/about/" }}class="nav-active"{{ end }}>关于</a>
-    </nav>
-    <div class="theme-toggle" onclick="toggleTheme()">🌓</div>
-  </header>
+{{ end }}
+
+{{ define "backtotop" }}
+  <button id="back-to-top" title="回到顶部">↑</button>
+{{ end }}
+
+{{ define "main" }}
   <article>
     <h1>{{ .Title }}</h1>
     {{ if eq .Section "posts" }}
       <p style="color:var(--nav-link); font-size: 0.9em; margin-bottom: 8px;">
         {{ .Date.Format "2006-01-02" }} &nbsp;·&nbsp; 约 {{ .ReadingTime }} 分钟阅读
       </p>
+
+      <div class="status-bar">
+        {{ if .Params.people }}
+        <div class="status-item">
+          <span class="status-icon">👤</span>
+          <span class="status-value">{{ delimit .Params.people ", " }}</span>
+        </div>
+        {{ end }}
+        {{ if .Params.health }}
+        <div class="status-item">
+          <span class="status-icon">🩺</span>
+          <span class="status-value">{{ delimit .Params.health ", " }}</span>
+        </div>
+        {{ end }}
+        {{ if .Params.energy }}
+        <div class="status-item">
+          <span class="status-icon">⚡</span>
+          <span class="status-value">{{ .Params.energy }}/5</span>
+        </div>
+        {{ end }}
+        {{ if .Params.work_focus }}
+        <div class="status-item">
+          <span class="status-icon">💼</span>
+          <span class="status-value">{{ delimit .Params.work_focus ", " }}</span>
+        </div>
+        {{ end }}
+      </div>
+
       {{ with .GetTerms "tags" }}<p style="margin-bottom: 30px;">{{ range . }}<a href="{{ .RelPermalink }}" class="tag-link">#{{ .Title }}</a>{{ end }}</p>{{ end }}
       {{ if .TableOfContents }}<aside id="toc"><span style="font-weight:bold; display:block; margin-bottom:10px;">目录提纲</span>{{ .TableOfContents }}</aside>{{ end }}
     {{ end }}
     <div class="content">{{ .Content }}</div>
   </article>
-  <footer><p>© <span id="year"></span> {{ .Site.Title }}</p></footer>
-  <button id="back-to-top" title="回到顶部">↑</button>
-  <script>
-    document.getElementById('year').textContent = new Date().getFullYear();
-    function toggleTheme() { document.body.classList.toggle('dark-mode'); localStorage.setItem('theme', document.body.classList.contains('dark-mode')?'dark':'light'); }
-    if (localStorage.getItem('theme')==='dark') document.body.classList.add('dark-mode');
-    const bar = document.getElementById('reading-progress');
-    const btn = document.getElementById('back-to-top');
-    window.addEventListener('scroll', () => {
-      const s = window.scrollY, t = document.documentElement.scrollHeight - window.innerHeight;
-      bar.style.width = (t > 0 ? (s / t * 100) : 0) + '%';
-      btn.classList.toggle('visible', s > 300);
+{{ end }}
+
+{{ define "extra_js" }}
+<script src="https://cdn.jsdelivr.net/npm/medium-zoom/dist/medium-zoom.min.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const zoom = mediumZoom(".content img", {
+      margin: 24,
+      background: "rgba(0,0,0,0.8)",
+      scrollOffset: 0
     });
-    btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
-    document.querySelectorAll('pre').forEach(pre => {
-      const w = document.createElement('div'); w.className = 'code-wrapper';
-      pre.parentNode.insertBefore(w, pre); w.appendChild(pre);
-      const b = document.createElement('button'); b.className = 'copy-btn'; b.textContent = '复制'; w.appendChild(b);
-      b.addEventListener('click', () => navigator.clipboard.writeText(pre.innerText).then(() => {
-        b.textContent = '✓ 已复制'; b.classList.add('copied');
-        setTimeout(() => { b.textContent = '复制'; b.classList.remove('copied'); }, 1800);
-      }));
-    });
-    document.querySelectorAll('.content a[href^="http"]').forEach(a => {
-      a.setAttribute('target', '_blank');
-      a.setAttribute('rel', 'noopener noreferrer');
-    });
-  </script>
-</body>
-</html>
+  });
+
+  const bar = document.getElementById('reading-progress');
+  const btn = document.getElementById('back-to-top');
+  window.addEventListener('scroll', () => {
+    const s = window.scrollY, t = document.documentElement.scrollHeight - window.innerHeight;
+    bar.style.width = (t > 0 ? (s / t * 100) : 0) + '%';
+    btn.classList.toggle('visible', s > 300);
+  });
+  btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+  document.querySelectorAll('pre').forEach(pre => {
+    const w = document.createElement('div'); w.className = 'code-wrapper';
+    pre.parentNode.insertBefore(w, pre); w.appendChild(pre);
+    const b = document.createElement('button'); b.className = 'copy-btn'; b.textContent = '复制'; w.appendChild(b);
+    b.addEventListener('click', () => navigator.clipboard.writeText(pre.innerText).then(() => {
+      b.textContent = '✓ 已复制'; b.classList.add('copied');
+      setTimeout(() => { b.textContent = '复制'; b.classList.remove('copied'); }, 1800);
+    }));
+  });
+  document.querySelectorAll('.content a[href^="http"]').forEach(a => {
+    a.setAttribute('target', '_blank');
+    a.setAttribute('rel', 'noopener noreferrer');
+  });
+</script>
+{{ end }}
